@@ -6,29 +6,23 @@ import (
 	"strings"
 )
 
-// GetServices retrieves a list of running Docker services
-func GetServices() ([]string, error) {
-	cmd := exec.Command("docker", "service", "ls", "--format", "{{.Name}}")
+// GetServices retrieves a list of services from docker-compose config
+func GetServices(projectDir string) ([]string, error) {
+	cmd := exec.Command("docker", "compose", "config", "--services")
+	cmd.Dir = projectDir
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list Docker services: %w", err)
+		return nil, fmt.Errorf("failed to get services: %w", err)
 	}
 
-	services := strings.Split(strings.TrimSpace(string(output)), "\n")
-	// Filter out empty strings
-	var filtered []string
-	for _, s := range services {
-		if s != "" {
-			filtered = append(filtered, s)
-		}
-	}
-
-	return filtered, nil
+	services := strings.Fields(string(output))
+	return services, nil
 }
 
-// RunCommand executes a Docker command with the given arguments
-func RunCommand(args ...string) error {
+// RunCommand executes a Docker command with the given arguments in the specified project directory
+func RunCommand(projectDir string, args ...string) error {
 	cmd := exec.Command("docker", args...)
+	cmd.Dir = projectDir
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("docker command failed: %w", err)
 	}
