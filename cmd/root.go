@@ -19,6 +19,10 @@ with Git integration support.`,
 	},
 }
 
+func init() {
+	// Note: dockerCmd is added in docker.go init function
+}
+
 // Execute runs the root command
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
