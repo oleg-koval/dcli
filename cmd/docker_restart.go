@@ -35,7 +35,7 @@ If no services are specified, all services are restarted.`,
 		}
 
 		if len(services) == 0 {
-			return fmt.Errorf("no services found or specified")
+			return fmt.Errorf("no services found to restart")
 		}
 
 		// Print target services
@@ -59,7 +59,7 @@ If no services are specified, all services are restarted.`,
 		fmt.Println("🚀 Starting services...")
 		upArgs := append([]string{"compose", "up", "-d"}, services...)
 		if err := docker.RunCommand(projectDir, upArgs...); err != nil {
-			return fmt.Errorf("start failed: %w", err)
+			return fmt.Errorf("failed to start services: %w", err)
 		}
 
 		fmt.Println("──────────────────────────────")
