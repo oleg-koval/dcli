@@ -10,5 +10,5 @@ var dockerCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(dockerCmd)
 	dockerCmd.AddCommand(dockerCleanCmd)
-	// dockerCmd.AddCommand(dockerRestartCmd) // TODO: Will be added in next task
+	dockerCmd.AddCommand(dockerRestartCmd)
 }
