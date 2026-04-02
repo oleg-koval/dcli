@@ -32,43 +32,46 @@ var gitResetCmd = &cobra.Command{
 		fmt.Printf("🔄 Resetting repositories to %s branch...\n", branch)
 		fmt.Println("")
 
-		originalDir, _ := os.Getwd()
-		defer os.Chdir(originalDir)
-
 		successCount := 0
+		var hasFailures bool
 		for _, repo := range cfg.Repositories {
 			fmt.Printf("🔄 Processing %s...\n", repo.Name)
 
 			if _, err := os.Stat(repo.Path); os.IsNotExist(err) {
 				fmt.Printf("  ⚠️  Directory not found: %s\n", repo.Path)
 				fmt.Println("")
+				hasFailures = true
 				continue
 			}
 
 			if !git.IsGitRepo(repo.Path) {
 				fmt.Printf("  ⚠️  Not a git repository: %s\n", repo.Path)
 				fmt.Println("")
+				hasFailures = true
 				continue
 			}
 
 			fmt.Println("  📥 Fetching from origin...")
 			if err := git.FetchOrigin(repo.Path); err != nil {
-				fmt.Printf("  ❌ Failed to fetch from origin\n")
+				fmt.Printf("  ❌ Failed to fetch from origin: %v\n", err)
 				fmt.Println("")
+				hasFailures = true
 				continue
 			}
 
 			fmt.Printf("  🔀 Checking out %s...\n", branch)
 			if err := git.CheckoutBranch(repo.Path, branch); err != nil {
-				fmt.Printf("  ❌ Failed to checkout %s\n", branch)
+				fmt.Printf("  ❌ Failed to checkout %s: %v\n", branch, err)
 				fmt.Println("")
+				hasFailures = true
 				continue
 			}
 
 			fmt.Printf("  🔄 Resetting to origin/%s...\n", branch)
 			if err := git.ResetHard(repo.Path, branch); err != nil {
-				fmt.Printf("  ❌ Failed to reset to origin/%s\n", branch)
+				fmt.Printf("  ❌ Failed to reset to origin/%s: %v\n", branch, err)
 				fmt.Println("")
+				hasFailures = true
 				continue
 			}
 
@@ -78,6 +81,9 @@ var gitResetCmd = &cobra.Command{
 		}
 
 		fmt.Printf("🎉 Done! Successfully reset %d/%d repositories\n", successCount, len(cfg.Repositories))
+		if hasFailures {
+			return fmt.Errorf("some repositories failed to reset")
+		}
 		return nil
 	},
 }
