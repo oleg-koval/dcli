@@ -10,7 +10,26 @@ permissions:
   packages: write
 
 jobs:
+  test-gate:
+    name: Verify Tests and Linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Run tests
+        run: go test -v -covermode=atomic ./...
+
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.64.8
+
   release:
+    needs: test-gate
     name: Create Release with GoReleaser
     runs-on: ubuntu-latest
     steps:
