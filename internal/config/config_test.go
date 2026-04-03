@@ -6,6 +6,22 @@ import (
 	"testing"
 )
 
+func setEnv(t *testing.T, key, value string) {
+	t.Helper()
+
+	if err := os.Setenv(key, value); err != nil {
+		t.Fatalf("failed to set %s: %v", key, err)
+	}
+}
+
+func unsetEnv(t *testing.T, key string) {
+	t.Helper()
+
+	if err := os.Unsetenv(key); err != nil {
+		t.Fatalf("failed to unset %s: %v", key, err)
+	}
+}
+
 func TestGetConfigPath(t *testing.T) {
 	path, err := GetConfigPath()
 	if err != nil {
@@ -35,12 +51,12 @@ func TestLoadConfigFileNotExist(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	cfg, err := Load()
 	if err != nil {
@@ -88,12 +104,12 @@ func TestLoadConfigValid(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	cfg, err := Load()
 	if err != nil {
@@ -142,12 +158,12 @@ func TestLoadConfigInvalidYAML(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	_, err = Load()
 	if err == nil {
@@ -175,12 +191,12 @@ func TestLoadConfigEmptyFile(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	cfg, err := Load()
 	if err != nil {
@@ -207,12 +223,12 @@ func TestSaveConfigCreateDir(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	cfg := &Config{
 		Repositories: []Repository{

@@ -36,6 +36,8 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
+	// Config paths are fixed under the user's home directory.
+	// #nosec G304
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -62,7 +64,7 @@ func (c *Config) Save() error {
 
 	// Create directory if it doesn't exist
 	configDir := filepath.Dir(configPath)
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0700); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 

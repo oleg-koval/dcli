@@ -6,13 +6,21 @@ import (
 	"testing"
 )
 
+func removeAll(t *testing.T, path string) {
+	t.Helper()
+
+	if err := os.RemoveAll(path); err != nil {
+		t.Fatalf("failed to remove %s: %v", path, err)
+	}
+}
+
 func TestGetServices(t *testing.T) {
 	// Create a temporary directory for the test
 	tmpDir, err := os.MkdirTemp("", "test-docker-*")
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer removeAll(t, tmpDir)
 
 	// Create a minimal docker-compose.yml for testing
 	composeContent := `version: '3'
@@ -70,7 +78,7 @@ func TestRunCommand(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer removeAll(t, tmpDir)
 
 	// Test RunCommand with a simple command that should work
 	// Using 'docker ps' which is unlikely to fail and doesn't require running containers
@@ -88,7 +96,7 @@ func TestRunCommandWithMultipleArgs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer removeAll(t, tmpDir)
 
 	// Test RunCommand with multiple arguments
 	err = RunCommand(tmpDir, "compose", "ps")
@@ -104,13 +112,13 @@ func TestRunCommandProjectDirUsed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory 1: %v", err)
 	}
-	defer os.RemoveAll(tmpDir1)
+	defer removeAll(t, tmpDir1)
 
 	tmpDir2, err := os.MkdirTemp("", "test-docker-2-*")
 	if err != nil {
 		t.Fatalf("failed to create temp directory 2: %v", err)
 	}
-	defer os.RemoveAll(tmpDir2)
+	defer removeAll(t, tmpDir2)
 
 	// Create docker-compose.yml in tmpDir1 only
 	composeContent := `version: '3'
