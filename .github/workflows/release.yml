@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Build
+        run: |
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+          go build -v -o dcli-${{ matrix.goos }}-${{ matrix.goarch }} \
+          -ldflags="-X 'github.com/oleg-koval/dcli/cmd.Version=${{ github.ref_name }}'" main.go
+        shell: bash
+
+      - name: Create Release Asset
+        if: matrix.os != 'windows-latest'
+        run: |
+          chmod +x dcli-${{ matrix.goos }}-${{ matrix.goarch }}
+          tar czf dcli-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz dcli-${{ matrix.goos }}-${{ matrix.goarch }}
+
+      - name: Create Release Asset (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          Compress-Archive -Path dcli-${{ matrix.goos }}-${{ matrix.goarch }}.exe -DestinationPath dcli-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+        shell: powershell
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dcli-${{ matrix.goos }}-${{ matrix.goarch }}.*

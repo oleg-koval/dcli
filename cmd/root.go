@@ -7,11 +7,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	Version = "dev"
+)
+
 var rootCmd = &cobra.Command{
-	Use:   "dcli",
-	Short: "Docker CLI - Manage Docker containers and services",
-	Long: `dcli is a command-line tool for managing Docker containers and services
-with Git integration support.`,
+	Use:     "dcli",
+	Short:   "Docker CLI - Manage Docker containers and services",
+	Long:    `dcli is a command-line tool for managing Docker containers and services with Git integration support.`,
+	Version: Version,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			cmd.Help()
