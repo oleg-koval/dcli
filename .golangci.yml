@@ -1,8 +1,12 @@
+# golangci-lint configuration
+# See https://golangci-lint.run/usage/configuration/
+
 run:
   timeout: 5m
   go: "1.21"
 
 linters:
+  # Enable security, error handling, and quality checks
   enable:
     - gosec          # Security issues
     - errcheck       # Error checking
