@@ -1,4 +1,4 @@
-version: 2
+version: 1
 project_name: dcli
 
 before:
@@ -42,7 +42,6 @@ checksum:
 release:
   name_template: 'Release {{.Version}}'
   draft: false
-  prerelease_suffix: ''
   footer: |
     ## Installation
 
