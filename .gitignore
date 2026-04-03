@@ -1,0 +1,13 @@
+bin/
+dist/
+*.o
+*.a
+*.so
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+.env
+.env.local
