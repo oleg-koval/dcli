@@ -50,6 +50,14 @@ DCLI_PROJECT_DIR=/path/to/project dcli docker clean
 
 Without this, dcli uses the current directory.
 
+### DCLI_DISABLE_AUTO_UPDATE
+
+Disable the GitHub Releases self-update check that runs on launch:
+
+```bash
+DCLI_DISABLE_AUTO_UPDATE=1 dcli git reset develop
+```
+
 ## Examples
 
 ### Docker Compose in subdirectory

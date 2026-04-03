@@ -7,12 +7,14 @@ import (
 	"testing"
 )
 
-func removeAll(t *testing.T, path string) {
+func cleanupDir(t *testing.T, path string) {
 	t.Helper()
 
-	if err := os.RemoveAll(path); err != nil {
-		t.Fatalf("failed to remove %s: %v", path, err)
-	}
+	t.Cleanup(func() {
+		if err := os.RemoveAll(path); err != nil {
+			t.Errorf("cleanup failed for %s: %v", path, err)
+		}
+	})
 }
 
 // Helper function to initialize a git repository
@@ -92,7 +94,7 @@ func TestIsGitRepo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer removeAll(t, tmpDir)
+	cleanupDir(t, tmpDir)
 
 	// Test non-git directory
 	if IsGitRepo(tmpDir) {
@@ -120,7 +122,7 @@ func TestGetCurrentBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer removeAll(t, tmpDir)
+	cleanupDir(t, tmpDir)
 
 	// Initialize and create initial commit
 	initGitRepo(t, tmpDir)
@@ -147,7 +149,7 @@ func TestCheckoutBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer removeAll(t, tmpDir)
+	cleanupDir(t, tmpDir)
 
 	// Initialize and create initial commit
 	initGitRepo(t, tmpDir)
@@ -188,7 +190,7 @@ func TestCheckoutBranchNotExist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer removeAll(t, tmpDir)
+	cleanupDir(t, tmpDir)
 
 	initGitRepo(t, tmpDir)
 	createInitialCommit(t, tmpDir)
@@ -204,7 +206,7 @@ func TestResetHard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer removeAll(t, tmpDir)
+	cleanupDir(t, tmpDir)
 
 	initGitRepo(t, tmpDir)
 	createInitialCommit(t, tmpDir)
@@ -249,7 +251,7 @@ func TestResetHardToCommit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer removeAll(t, tmpDir)
+	cleanupDir(t, tmpDir)
 
 	initGitRepo(t, tmpDir)
 	createInitialCommit(t, tmpDir)
@@ -288,7 +290,7 @@ func TestResetHardInvalidTarget(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer removeAll(t, tmpDir)
+	cleanupDir(t, tmpDir)
 
 	initGitRepo(t, tmpDir)
 	createInitialCommit(t, tmpDir)
@@ -304,7 +306,7 @@ func TestGetRemoteURL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer removeAll(t, tmpDir)
+	cleanupDir(t, tmpDir)
 
 	initGitRepo(t, tmpDir)
 	createInitialCommit(t, tmpDir)
@@ -333,7 +335,7 @@ func TestGetRemoteURLNoRemote(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer removeAll(t, tmpDir)
+	cleanupDir(t, tmpDir)
 
 	initGitRepo(t, tmpDir)
 	createInitialCommit(t, tmpDir)
@@ -345,53 +347,12 @@ func TestGetRemoteURLNoRemote(t *testing.T) {
 	}
 }
 
-func TestValidateBranchTarget(t *testing.T) {
-	t.Run("empty", func(t *testing.T) {
-		err := ValidateBranchTarget("")
-		if err == nil {
-			t.Fatal("expected error for empty branch, got nil")
-		}
-		if err.Error() != "branch name cannot be empty or whitespace" {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	})
-
-	t.Run("whitespace", func(t *testing.T) {
-		err := ValidateBranchTarget("   \t  ")
-		if err == nil {
-			t.Fatal("expected error for whitespace branch, got nil")
-		}
-		if err.Error() != "branch name cannot be empty or whitespace" {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	})
-
-	t.Run("valid", func(t *testing.T) {
-		if err := ValidateBranchTarget("develop"); err != nil {
-			t.Fatalf("expected valid branch, got %v", err)
-		}
-		if err := ValidateBranchTarget("acceptance"); err != nil {
-			t.Fatalf("expected valid branch, got %v", err)
-		}
-	})
-
-	t.Run("invalid", func(t *testing.T) {
-		err := ValidateBranchTarget("main")
-		if err == nil {
-			t.Fatal("expected error for invalid branch, got nil")
-		}
-		if err.Error() != "branch must be 'develop' or 'acceptance', got 'main'" {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	})
-}
-
 func TestFetchOriginNoRemote(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "test-git-*")
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer removeAll(t, tmpDir)
+	cleanupDir(t, tmpDir)
 
 	initGitRepo(t, tmpDir)
 	createInitialCommit(t, tmpDir)
@@ -409,7 +370,7 @@ func TestFetchOriginBadNetwork(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer removeAll(t, tmpDir)
+	cleanupDir(t, tmpDir)
 
 	initGitRepo(t, tmpDir)
 	createInitialCommit(t, tmpDir)
@@ -433,7 +394,7 @@ func TestGitRepoWithSubdirectory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer removeAll(t, tmpDir)
+	cleanupDir(t, tmpDir)
 
 	initGitRepo(t, tmpDir)
 	createInitialCommit(t, tmpDir)

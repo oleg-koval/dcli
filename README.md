@@ -23,6 +23,7 @@
 - 🐳 **Docker Management** - Clean containers/volumes, rebuild, and restart services
 - 🔄 **Git Batch Operations** - Reset multiple repositories to any branch on origin
 - 🚀 **Homebrew Distribution** - Install with a single command: `brew install dcli`
+- 🔄 **Auto-Updates** - Checks GitHub Releases on launch and self-updates when a newer version is available
 - 🖥️ **Cross-Platform** - Works on macOS (Intel & Apple Silicon), Linux, and Windows
 - ⚙️ **YAML Configuration** - Simple config file at `~/.dcli/config.yaml`
 - 📝 **Clear Error Messages** - Comprehensive feedback on what went wrong and why
@@ -50,6 +51,8 @@ make build
 ### Direct Download
 
 Download binaries for your platform from [GitHub Releases](https://github.com/oleg-koval/dcli/releases/tag/v0.1.0)
+
+Set `DCLI_DISABLE_AUTO_UPDATE=1` if you want to skip the startup update check.
 
 ## Quick Start
 

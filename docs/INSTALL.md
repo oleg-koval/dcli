@@ -13,6 +13,9 @@ To update:
 brew upgrade dcli
 ```
 
+`dcli` also checks GitHub Releases on launch and updates itself when a newer version is available.
+Set `DCLI_DISABLE_AUTO_UPDATE=1` to skip that check.
+
 ## From Source
 
 ### Prerequisites
