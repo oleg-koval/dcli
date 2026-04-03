@@ -1,4 +1,4 @@
-name: Release
+name: Build and Release
 
 on:
   push:
@@ -6,7 +6,8 @@ on:
       - 'v*'
 
 jobs:
-  release:
+  build:
+    name: Build Binaries
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -14,20 +15,31 @@ jobs:
           - os: macos-latest
             goos: darwin
             goarch: amd64
+            arch_name: darwin-amd64
+
           - os: macos-latest
             goos: darwin
             goarch: arm64
+            arch_name: darwin-arm64
+
           - os: ubuntu-latest
             goos: linux
             goarch: amd64
+            arch_name: linux-amd64
+
           - os: ubuntu-latest
             goos: linux
             goarch: arm64
+            arch_name: linux-arm64
+
           - os: windows-latest
             goos: windows
             goarch: amd64
+            arch_name: windows-amd64
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-go@v4
         with:
           go-version: '1.22'
@@ -35,24 +47,66 @@ jobs:
       - name: Build
         run: |
           GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
-          go build -v -o dcli-${{ matrix.goos }}-${{ matrix.goarch }} \
+          go build -v -o dcli-${{ matrix.arch_name }} \
           -ldflags="-X 'github.com/oleg-koval/dcli/cmd.Version=${{ github.ref_name }}'" main.go
         shell: bash
 
-      - name: Create Release Asset
+      - name: Create Release Asset (Unix)
         if: matrix.os != 'windows-latest'
         run: |
-          chmod +x dcli-${{ matrix.goos }}-${{ matrix.goarch }}
-          tar czf dcli-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz dcli-${{ matrix.goos }}-${{ matrix.goarch }}
+          chmod +x dcli-${{ matrix.arch_name }}
+          tar czf dcli-${{ matrix.arch_name }}.tar.gz dcli-${{ matrix.arch_name }}
+        shell: bash
 
       - name: Create Release Asset (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          Compress-Archive -Path dcli-${{ matrix.goos }}-${{ matrix.goarch }}.exe -DestinationPath dcli-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+          Compress-Archive -Path dcli-${{ matrix.arch_name }}.exe -DestinationPath dcli-${{ matrix.arch_name }}.zip
         shell: powershell
 
-      - name: Upload Release
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries-${{ matrix.arch_name }}
+          path: |
+            dcli-${{ matrix.arch_name }}*
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          body: |
+            ## Changes
+            See [CHANGELOG.md](https://github.com/oleg-koval/dcli/blob/main/CHANGELOG.md) for full details.
+
+            ## Installation
+            
+            ### Homebrew
+            ```bash
+            brew tap oleg-koval/dcli
+            brew install dcli
+            ```
+            
+            ### Direct Download
+            Download the binary for your platform below and run:
+            ```bash
+            tar xzf dcli-*.tar.gz
+            ./dcli --version
+            ```
           files: |
-            dcli-${{ matrix.goos }}-${{ matrix.goarch }}.*
+            binaries-*/*
+          fail_on_unmatched_files: false
+          draft: false
+          prerelease: false
