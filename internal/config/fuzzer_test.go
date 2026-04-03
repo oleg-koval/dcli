@@ -5,9 +5,11 @@ package config
 
 import (
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
-// FuzzConfigYAML fuzzes YAML configuration parsing
+// FuzzConfigYAML fuzzes YAML configuration parsing and unmarshaling
 func FuzzConfigYAML(f *testing.F) {
 	testcases := []string{
 		"repositories: []",
@@ -16,6 +18,7 @@ func FuzzConfigYAML(f *testing.F) {
 		"invalid: yaml: structure:",
 		"repositories:\n  - {}",
 		"repositories:\n  - path: /path\n    name: repo\n    remote: origin",
+		"repositories:\n  - path: /path\n    name: repo\n    remote: origin\n    invalid_field: value",
 	}
 
 	for _, tc := range testcases {
@@ -23,12 +26,28 @@ func FuzzConfigYAML(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, input string) {
-		// This fuzzer ensures config parsing can handle arbitrary YAML input
-		// without panicking or crashing
+		// Empty input short-circuits (same as actual behavior)
 		if input == "" {
 			return
 		}
-		// In a real implementation, you would parse the YAML here
-		// The fuzzer helps find edge cases in parsing logic
+
+		// Exercise the YAML parsing logic used by Load()
+		var cfg Config
+		err := yaml.Unmarshal([]byte(input), &cfg)
+
+		// The fuzzer validates parsing doesn't panic on arbitrary input
+		// err can be nil (valid YAML) or non-nil (invalid YAML)
+		// Both cases should be handled gracefully without panics
+		_ = err
+
+		// Validate parsed structure if no error
+		if err == nil && cfg.Repositories != nil {
+			// Exercise field access to ensure no panics on malformed structures
+			for _, repo := range cfg.Repositories {
+				_ = repo.Name
+				_ = repo.Path
+				_ = repo.Remote
+			}
+		}
 	})
 }
