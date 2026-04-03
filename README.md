@@ -32,7 +32,7 @@ make install
 ### Docker
 
 ```bash
-# Clean all services (remove containers, volumes, images, rebuild, restart)
+# Clean all services (remove containers, volumes, rebuild, restart)
 dcli docker clean
 
 # Clean specific services
@@ -61,11 +61,11 @@ Create `~/.dcli/config.yaml`:
 
 ```yaml
 repositories:
-  - path: /path/to/monorepo
+  - path: /Users/username/projects/monorepo  # Use absolute path
     name: monorepo
-  - path: /path/to/backend
+  - path: /Users/username/projects/backend  # Use absolute path
     name: backend
-  - path: /path/to/frontend
+  - path: /Users/username/projects/frontend  # Use absolute path
     name: frontend
 ```
 
