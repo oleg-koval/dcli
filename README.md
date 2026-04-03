@@ -1,7 +1,5 @@
 # dcli
 
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/oleg-koval/dcli/badge)](https://securityscorecards.dev/viewer/?uri=github.com/oleg-koval/dcli)
-
 A lightweight CLI tool for managing Docker Compose services and Git repositories.
 
 ## Features
