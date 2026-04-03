@@ -170,24 +170,82 @@ func TestGitResetAcceptanceBranch(t *testing.T) {
 	}
 }
 
-func TestGitResetInvalidBranch(t *testing.T) {
+func TestGitResetCustomBranch(t *testing.T) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	if err != nil {
+		t.Fatalf("failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tmpHome)
+
+	dcliDir := filepath.Join(tmpHome, ".dcli")
+	if err := os.MkdirAll(dcliDir, 0755); err != nil {
+		t.Fatalf("failed to create .dcli dir: %v", err)
+	}
+
+	repoPath := filepath.Join(tmpHome, "test-repo")
+	if err := os.MkdirAll(repoPath, 0755); err != nil {
+		t.Fatalf("failed to create repo dir: %v", err)
+	}
+
+	configFile := filepath.Join(dcliDir, "config.yaml")
+	configContent := fmt.Sprintf(`repositories:
+  - name: test-repo
+    path: %s
+    remote: origin
+`, repoPath)
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	oldHome := os.Getenv("HOME")
+	defer func() {
+		if oldHome != "" {
+			os.Setenv("HOME", oldHome)
+		} else {
+			os.Unsetenv("HOME")
+		}
+	}()
+	os.Setenv("HOME", tmpHome)
+
+	mockHelper := &MockGitHelper{
+		IsGitRepoFn: func(path string) bool {
+			return true
+		},
+		FetchOriginFn: func(path string) error {
+			return nil
+		},
+		CheckoutBranchFn: func(path, branch string) error {
+			return nil
+		},
+		ResetHardFn: func(path, branch string) error {
+			return nil
+		},
+	}
+	setGitHelper(mockHelper)
+	defer resetGitHelper()
+
 	rootCmd := &cobra.Command{}
 	gitCmdLocal := &cobra.Command{Use: "git"}
 	rootCmd.AddCommand(gitCmdLocal)
 	gitCmdLocal.AddCommand(gitResetCmd)
 
-	rootCmd.SetArgs([]string{"git", "reset", "invalid-branch"})
-	err := rootCmd.Execute()
-	if err == nil {
-		t.Error("expected error for invalid branch, got nil")
+	rootCmd.SetArgs([]string{"git", "reset", "main"})
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
 	}
 
-	// Verify error message mentions allowed branches
-	if err != nil {
-		errMsg := err.Error()
-		if errMsg != "branch must be 'develop' or 'acceptance', got 'invalid-branch'" {
-			t.Errorf("unexpected error message: %v", err)
-		}
+	if len(mockHelper.Calls.CheckoutBranch) != 1 {
+		t.Fatalf("expected CheckoutBranch to be called once, got %d", len(mockHelper.Calls.CheckoutBranch))
+	}
+	if mockHelper.Calls.CheckoutBranch[0].Branch != "main" {
+		t.Errorf("expected checkout branch 'main', got %q", mockHelper.Calls.CheckoutBranch[0].Branch)
+	}
+	if len(mockHelper.Calls.ResetHard) != 1 {
+		t.Fatalf("expected ResetHard to be called once, got %d", len(mockHelper.Calls.ResetHard))
+	}
+	if mockHelper.Calls.ResetHard[0].Branch != "origin/main" {
+		t.Errorf("expected reset target 'origin/main', got %q", mockHelper.Calls.ResetHard[0].Branch)
 	}
 }
 
@@ -612,8 +670,8 @@ func TestGitResetMultipleRepos(t *testing.T) {
 }
 
 func TestGitResetCommandMetadata(t *testing.T) {
-	if gitResetCmd.Use != "reset [develop|acceptance]" {
-		t.Errorf("expected Use 'reset [develop|acceptance]', got %s", gitResetCmd.Use)
+	if gitResetCmd.Use != "reset <branch>" {
+		t.Errorf("expected Use 'reset <branch>', got %s", gitResetCmd.Use)
 	}
 
 	if gitResetCmd.Short == "" {
