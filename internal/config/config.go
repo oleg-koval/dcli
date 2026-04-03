@@ -36,7 +36,7 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
-	data, err := os.ReadFile(configPath)
+	data, err := os.ReadFile(configPath) // #nosec G304 -- configPath is validated against the user's HOME directory
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Return empty config if file doesn't exist
@@ -62,7 +62,7 @@ func (c *Config) Save() error {
 
 	// Create directory if it doesn't exist
 	configDir := filepath.Dir(configPath)
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0700); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
