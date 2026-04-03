@@ -2,91 +2,97 @@ package cmd
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
-func TestDockerCleanHelp(t *testing.T) {
-	dockerCleanCmd.SetArgs([]string{"--help"})
-	err := dockerCleanCmd.Execute()
+func TestDockerCleanWithValidServices(t *testing.T) {
+	mockHelper := &MockDockerHelper{
+		GetServicesFn: func(projectDir string) ([]string, error) {
+			return []string{"web", "db"}, nil
+		},
+		RunCommandFn: func(projectDir string, args ...string) error {
+			return nil
+		},
+	}
+	setDockerHelper(mockHelper)
+	defer resetDockerHelper()
+
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+	dockerCmd.AddCommand(dockerCleanCmd)
+
+	rootCmd.SetArgs([]string{"docker", "clean", "web", "db"})
+	err := rootCmd.Execute()
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-}
 
-func TestDockerCleanNoArgs(t *testing.T) {
-	dockerCleanCmd.SetArgs([]string{})
-	if dockerCleanCmd.Name() != "clean" {
-		t.Fatalf("expected command name 'clean', got %s", dockerCleanCmd.Name())
+	// Verify docker helper was called
+	if len(mockHelper.Calls.RunCommand) == 0 {
+		t.Error("expected RunCommand to be called")
 	}
 }
 
-func TestDockerCleanWithServiceArgs(t *testing.T) {
-	dockerCleanCmd.SetArgs([]string{"service1", "service2"})
-	if dockerCleanCmd.Name() != "clean" {
-		t.Fatalf("expected command name 'clean', got %s", dockerCleanCmd.Name())
+func TestDockerCleanWithNoServices(t *testing.T) {
+	mockHelper := &MockDockerHelper{
+		GetServicesFn: func(projectDir string) ([]string, error) {
+			return []string{"web", "db", "cache"}, nil
+		},
+		RunCommandFn: func(projectDir string, args ...string) error {
+			return nil
+		},
 	}
-}
+	setDockerHelper(mockHelper)
+	defer resetDockerHelper()
 
-func TestDockerCleanProjectDirHandling(t *testing.T) {
-	// Create a temporary directory for testing
-	tmpDir, err := os.MkdirTemp("", "test-docker-clean-*")
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+	dockerCmd.AddCommand(dockerCleanCmd)
+
+	rootCmd.SetArgs([]string{"docker", "clean"})
+	err := rootCmd.Execute()
 	if err != nil {
-		t.Fatalf("failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	// Create a minimal docker-compose.yml
-	composeContent := `version: '3'
-services:
-  test-service:
-    image: nginx
-`
-	composeFile := filepath.Join(tmpDir, "docker-compose.yml")
-	if err := os.WriteFile(composeFile, []byte(composeContent), 0644); err != nil {
-		t.Fatalf("failed to write docker-compose.yml: %v", err)
+		t.Fatalf("expected no error, got %v", err)
 	}
 
-	// Set DCLI_PROJECT_DIR environment variable
-	oldProjectDir := os.Getenv("DCLI_PROJECT_DIR")
-	defer func() {
-		if oldProjectDir != "" {
-			os.Setenv("DCLI_PROJECT_DIR", oldProjectDir)
-		} else {
-			os.Unsetenv("DCLI_PROJECT_DIR")
-		}
-	}()
-
-	os.Setenv("DCLI_PROJECT_DIR", tmpDir)
-
-	// Test that DCLI_PROJECT_DIR is properly read and used
-	// Note: This test verifies the env var is read; actual command execution
-	// requires docker to be installed and running
-	projectDir := os.Getenv("DCLI_PROJECT_DIR")
-	if projectDir != tmpDir {
-		t.Fatalf("expected DCLI_PROJECT_DIR to be %s, got %s", tmpDir, projectDir)
+	// Verify GetServices was called to get all services
+	if len(mockHelper.Calls.GetServices) == 0 {
+		t.Error("expected GetServices to be called when no services specified")
 	}
 }
 
-func TestDockerCleanDefaultProjectDir(t *testing.T) {
-	// Ensure DCLI_PROJECT_DIR is not set
-	oldProjectDir := os.Getenv("DCLI_PROJECT_DIR")
-	defer func() {
-		if oldProjectDir != "" {
-			os.Setenv("DCLI_PROJECT_DIR", oldProjectDir)
-		} else {
-			os.Unsetenv("DCLI_PROJECT_DIR")
-		}
-	}()
-
-	os.Unsetenv("DCLI_PROJECT_DIR")
-
-	// Verify that when DCLI_PROJECT_DIR is not set, it defaults to "."
-	projectDir := os.Getenv("DCLI_PROJECT_DIR")
-	if projectDir != "" {
-		t.Fatalf("expected DCLI_PROJECT_DIR to be unset, got %s", projectDir)
+func TestDockerCleanRunCommandCalled(t *testing.T) {
+	runCommandCalled := false
+	mockHelper := &MockDockerHelper{
+		GetServicesFn: func(projectDir string) ([]string, error) {
+			return []string{"web"}, nil
+		},
+		RunCommandFn: func(projectDir string, args ...string) error {
+			runCommandCalled = true
+			return nil
+		},
 	}
-	// The command should default to "." if DCLI_PROJECT_DIR is empty
+	setDockerHelper(mockHelper)
+	defer resetDockerHelper()
+
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+	dockerCmd.AddCommand(dockerCleanCmd)
+
+	rootCmd.SetArgs([]string{"docker", "clean", "web"})
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if !runCommandCalled {
+		t.Error("expected RunCommand to be called")
+	}
 }
 
 func TestDockerCleanCommandMetadata(t *testing.T) {
@@ -107,28 +113,7 @@ func TestDockerCleanCommandMetadata(t *testing.T) {
 	}
 }
 
-func TestDockerCleanRunEWithValidArgs(t *testing.T) {
-	// Create temp directory with docker-compose.yml
-	tmpDir, err := os.MkdirTemp("", "test-docker-clean-*")
-	if err != nil {
-		t.Fatalf("failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	// Create minimal docker-compose.yml
-	composeContent := `version: '3'
-services:
-  web:
-    image: nginx
-  db:
-    image: postgres
-`
-	composeFile := filepath.Join(tmpDir, "docker-compose.yml")
-	if err := os.WriteFile(composeFile, []byte(composeContent), 0644); err != nil {
-		t.Fatalf("failed to write docker-compose.yml: %v", err)
-	}
-
-	// Set project directory
+func TestDockerCleanProjectDirFromEnv(t *testing.T) {
 	oldProjectDir := os.Getenv("DCLI_PROJECT_DIR")
 	defer func() {
 		if oldProjectDir != "" {
@@ -137,26 +122,44 @@ services:
 			os.Unsetenv("DCLI_PROJECT_DIR")
 		}
 	}()
-	os.Setenv("DCLI_PROJECT_DIR", tmpDir)
 
-	// Execute command with service names
-	dockerCleanCmd.SetArgs([]string{"web"})
-	err = dockerCleanCmd.Execute()
-	// Note: Will fail if docker is not running, but that's expected in test environment
-	// The important thing is that it attempts to run
+	os.Setenv("DCLI_PROJECT_DIR", "/test/path")
+
+	mockHelper := &MockDockerHelper{
+		GetServicesFn: func(projectDir string) ([]string, error) {
+			if projectDir != "/test/path" {
+				t.Errorf("expected projectDir '/test/path', got %s", projectDir)
+			}
+			return []string{"web"}, nil
+		},
+		RunCommandFn: func(projectDir string, args ...string) error {
+			return nil
+		},
+	}
+	setDockerHelper(mockHelper)
+	defer resetDockerHelper()
+
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+	dockerCmd.AddCommand(dockerCleanCmd)
+
+	rootCmd.SetArgs([]string{"docker", "clean", "web"})
+	err := rootCmd.Execute()
 	if err != nil {
-		t.Logf("command execution note: %v (docker may not be running)", err)
+		t.Fatalf("expected no error, got %v", err)
 	}
 }
 
-func TestDockerCleanCommandStructure(t *testing.T) {
-	// Verify the command has proper structure
-	if dockerCleanCmd.Name() != "clean" {
-		t.Errorf("expected command name 'clean', got %s", dockerCleanCmd.Name())
-	}
+func TestDockerCleanHelp(t *testing.T) {
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+	dockerCmd.AddCommand(dockerCleanCmd)
 
-	// Verify it's properly registered as subcommand
-	if dockerCleanCmd.Parent() == nil {
-		t.Logf("Note: command parent is nil (expected in test context)")
+	rootCmd.SetArgs([]string{"docker", "clean", "--help"})
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
 	}
 }
