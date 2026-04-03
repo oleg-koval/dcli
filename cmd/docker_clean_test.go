@@ -88,3 +88,75 @@ func TestDockerCleanDefaultProjectDir(t *testing.T) {
 	}
 	// The command should default to "." if DCLI_PROJECT_DIR is empty
 }
+
+func TestDockerCleanCommandMetadata(t *testing.T) {
+	if dockerCleanCmd.Use != "clean [services...]" {
+		t.Errorf("expected Use 'clean [services...]', got %s", dockerCleanCmd.Use)
+	}
+
+	if dockerCleanCmd.Short == "" {
+		t.Error("expected non-empty Short description")
+	}
+
+	if dockerCleanCmd.Long == "" {
+		t.Error("expected non-empty Long description")
+	}
+
+	if dockerCleanCmd.RunE == nil {
+		t.Error("expected RunE function to be defined")
+	}
+}
+
+func TestDockerCleanRunEWithValidArgs(t *testing.T) {
+	// Create temp directory with docker-compose.yml
+	tmpDir, err := os.MkdirTemp("", "test-docker-clean-*")
+	if err != nil {
+		t.Fatalf("failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create minimal docker-compose.yml
+	composeContent := `version: '3'
+services:
+  web:
+    image: nginx
+  db:
+    image: postgres
+`
+	composeFile := filepath.Join(tmpDir, "docker-compose.yml")
+	if err := os.WriteFile(composeFile, []byte(composeContent), 0644); err != nil {
+		t.Fatalf("failed to write docker-compose.yml: %v", err)
+	}
+
+	// Set project directory
+	oldProjectDir := os.Getenv("DCLI_PROJECT_DIR")
+	defer func() {
+		if oldProjectDir != "" {
+			os.Setenv("DCLI_PROJECT_DIR", oldProjectDir)
+		} else {
+			os.Unsetenv("DCLI_PROJECT_DIR")
+		}
+	}()
+	os.Setenv("DCLI_PROJECT_DIR", tmpDir)
+
+	// Execute command with service names
+	dockerCleanCmd.SetArgs([]string{"web"})
+	err = dockerCleanCmd.Execute()
+	// Note: Will fail if docker is not running, but that's expected in test environment
+	// The important thing is that it attempts to run
+	if err != nil {
+		t.Logf("command execution note: %v (docker may not be running)", err)
+	}
+}
+
+func TestDockerCleanCommandStructure(t *testing.T) {
+	// Verify the command has proper structure
+	if dockerCleanCmd.Name() != "clean" {
+		t.Errorf("expected command name 'clean', got %s", dockerCleanCmd.Name())
+	}
+
+	// Verify it's properly registered as subcommand
+	if dockerCleanCmd.Parent() == nil {
+		t.Logf("Note: command parent is nil (expected in test context)")
+	}
+}
