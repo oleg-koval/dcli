@@ -16,8 +16,8 @@ var gitResetCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		branch := args[0]
-		if branch != "develop" && branch != "acceptance" {
-			return fmt.Errorf("branch must be 'develop' or 'acceptance', got '%s'", branch)
+		if err := git.ValidateBranchTarget(branch); err != nil {
+			return err
 		}
 
 		cfg, err := config.Load()
@@ -44,7 +44,7 @@ var gitResetCmd = &cobra.Command{
 				continue
 			}
 
-			if !git.IsGitRepo(repo.Path) {
+			if !gitHelper.IsGitRepo(repo.Path) {
 				fmt.Printf("  ⚠️  Not a git repository: %s\n", repo.Path)
 				fmt.Println("")
 				hasFailures = true
@@ -52,7 +52,7 @@ var gitResetCmd = &cobra.Command{
 			}
 
 			fmt.Println("  📥 Fetching from origin...")
-			if err := git.FetchOrigin(repo.Path); err != nil {
+			if err := gitHelper.FetchOrigin(repo.Path); err != nil {
 				fmt.Printf("  ❌ Failed to fetch from origin: %v\n", err)
 				fmt.Println("")
 				hasFailures = true
@@ -60,7 +60,7 @@ var gitResetCmd = &cobra.Command{
 			}
 
 			fmt.Printf("  🔀 Checking out %s...\n", branch)
-			if err := git.CheckoutBranch(repo.Path, branch); err != nil {
+			if err := gitHelper.CheckoutBranch(repo.Path, branch); err != nil {
 				fmt.Printf("  ❌ Failed to checkout %s: %v\n", branch, err)
 				fmt.Println("")
 				hasFailures = true
@@ -68,7 +68,7 @@ var gitResetCmd = &cobra.Command{
 			}
 
 			fmt.Printf("  🔄 Resetting to origin/%s...\n", branch)
-			if err := git.ResetHard(repo.Path, branch); err != nil {
+			if err := gitHelper.ResetHard(repo.Path, "origin/"+branch); err != nil {
 				fmt.Printf("  ❌ Failed to reset to origin/%s: %v\n", branch, err)
 				fmt.Println("")
 				hasFailures = true

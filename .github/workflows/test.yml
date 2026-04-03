@@ -19,8 +19,17 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - name: Verify dependencies
+        run: go mod verify
+
       - name: Run tests with coverage
         run: go test -v -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Run linter (SAST)
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.64.8
+          args: --timeout=5m
 
       - name: Upload coverage to Coveralls
         if: matrix.go-version == '1.22'

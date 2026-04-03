@@ -1,45 +1,45 @@
-<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background circle (optional, for context) -->
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    <!-- Background -->
+    <linearGradient id="bg" x1="0" y1="0" x2="256" y2="256">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+
+    <!-- Primary blue -->
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+
+    <!-- Accent -->
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#f97316"/>
     </linearGradient>
   </defs>
 
-  <!-- Docker Container (left side) -->
-  <g id="docker-element">
-    <!-- Container box -->
-    <rect x="16" y="40" width="44" height="52" rx="4" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+  <!-- Background -->
+  <rect width="256" height="256" rx="32" fill="url(#bg)"/>
 
-    <!-- Container horizontal lines -->
-    <line x1="22" y1="50" x2="54" y2="50" stroke="#2563eb" stroke-width="2"/>
-    <line x1="22" y1="62" x2="54" y2="62" stroke="#2563eb" stroke-width="2"/>
-    <line x1="22" y1="74" x2="54" y2="74" stroke="#2563eb" stroke-width="2"/>
+  <!-- Container block (Docker abstraction) -->
+  <rect x="64" y="88" width="128" height="80" rx="12" fill="url(#blue)"/>
+
+  <!-- Git structure (clean geometry) -->
+  <g stroke="#bfdbfe" stroke-width="4" stroke-linecap="round" fill="none">
+    <!-- vertical -->
+    <line x1="128" y1="56" x2="128" y2="200"/>
+
+    <!-- left branch -->
+    <line x1="128" y1="120" x2="88" y2="140"/>
+
+    <!-- right branch -->
+    <line x1="128" y1="120" x2="168" y2="140"/>
   </g>
 
-  <!-- Git Branch (right side) -->
-  <g id="git-element">
-    <!-- Vertical line -->
-    <line x1="74" y1="40" x2="74" y2="92" stroke="#f97316" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Nodes -->
+  <circle cx="128" cy="120" r="8" fill="url(#orange)"/>
+  <circle cx="88" cy="140" r="6" fill="#60a5fa"/>
+  <circle cx="168" cy="140" r="6" fill="#60a5fa"/>
 
-    <!-- Top branch point -->
-    <circle cx="74" cy="48" r="3" fill="#f97316"/>
-    <line x1="74" y1="48" x2="94" y2="48" stroke="#f97316" stroke-width="2.5" stroke-linecap="round"/>
-    <circle cx="94" cy="48" r="3" fill="#f97316"/>
-
-    <!-- Middle branch point -->
-    <circle cx="74" cy="64" r="3" fill="#f97316"/>
-    <line x1="74" y1="64" x2="54" y2="64" stroke="#f97316" stroke-width="2.5" stroke-linecap="round"/>
-    <circle cx="54" cy="64" r="3" fill="#f97316"/>
-
-    <!-- Bottom branch point -->
-    <circle cx="74" cy="80" r="3" fill="#f97316"/>
-  </g>
-
-  <!-- Connection indicator -->
-  <circle cx="64" cy="64" r="4" fill="#2563eb" opacity="0.3"/>
-
-  <!-- Top accent -->
-  <path d="M 32 30 Q 40 20 48 30" stroke="#f97316" stroke-width="2" fill="none" stroke-linecap="round"/>
 </svg>

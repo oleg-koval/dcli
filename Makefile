@@ -12,6 +12,7 @@ help:
 	@echo "  build-all    - Build for all platforms"
 	@echo "  test         - Run tests"
 	@echo "  lint         - Run linter"
+	@echo "  fuzz         - Run fuzzer tests"
 	@echo "  install      - Install locally"
 	@echo "  clean        - Remove build artifacts"
 
@@ -29,7 +30,12 @@ test:
 	go test -v -cover ./...
 
 lint:
-	golangci-lint run ./...
+	go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 run
+
+fuzz:
+	go test -fuzz=FuzzCleanCommand ./internal/docker -fuzztime=10s
+	go test -fuzz=FuzzGitReset ./internal/git -fuzztime=10s
+	go test -fuzz=FuzzConfigYAML ./internal/config -fuzztime=10s
 
 install: build
 	cp bin/$(BINARY_NAME) $(HOME)/.local/bin/$(BINARY_NAME)
