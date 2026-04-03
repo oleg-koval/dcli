@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -9,151 +10,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestGitResetHelp(t *testing.T) {
-	gitResetCmd.SetArgs([]string{"--help"})
-	err := gitResetCmd.Execute()
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-}
-
-func TestGitResetNoBranch(t *testing.T) {
-	gitResetCmd.SetArgs([]string{})
-	if gitResetCmd.Name() != "reset" {
-		t.Fatalf("expected command name 'reset', got %s", gitResetCmd.Name())
-	}
-}
-
-func TestGitResetCommandMetadata(t *testing.T) {
-	if gitResetCmd.Use != "reset [develop|acceptance]" {
-		t.Errorf("expected Use 'reset [develop|acceptance]', got %s", gitResetCmd.Use)
-	}
-
-	if gitResetCmd.Short == "" {
-		t.Error("expected non-empty Short description")
-	}
-
-	if gitResetCmd.Long == "" {
-		t.Error("expected non-empty Long description")
-	}
-
-	if gitResetCmd.RunE == nil {
-		t.Error("expected RunE function to be defined")
-	}
-}
-
-func TestGitResetInvalidBranch(t *testing.T) {
-	// Create a fresh root command to test
-	rootCmd := &cobra.Command{}
-	rootCmd.AddCommand(gitResetCmd)
-
-	// Test that invalid branch names are rejected
-	rootCmd.SetArgs([]string{"reset", "invalid-branch"})
-	err := rootCmd.Execute()
-	if err == nil {
-		t.Error("expected error for invalid branch, got nil")
-	}
-
-	// Verify error message mentions allowed branches
-	if err != nil && !containsStr(err.Error(), "develop") && !containsStr(err.Error(), "acceptance") {
-		t.Logf("error message doesn't mention allowed branches: %v", err)
-	}
-}
-
-func TestGitResetValidBranchDevelop(t *testing.T) {
-	// Create a fresh root command to test
-	rootCmd := &cobra.Command{}
-	rootCmd.AddCommand(gitResetCmd)
-
-	// Test that develop is accepted (will fail if no config, but that's OK for this test)
-	rootCmd.SetArgs([]string{"reset", "develop"})
-	err := rootCmd.Execute()
-	// Expected to fail due to no config file, but the branch should be accepted
-	if err != nil && !containsStr(err.Error(), "no repositories") && !containsStr(err.Error(), "failed to load config") {
-		// If error is not about config, it's a different issue
-		t.Logf("command error: %v", err)
-	}
-}
-
-func TestGitResetValidBranchAcceptance(t *testing.T) {
-	// Create a fresh root command to test
-	rootCmd := &cobra.Command{}
-	rootCmd.AddCommand(gitResetCmd)
-
-	// Test that acceptance is accepted (will fail if no config, but that's OK for this test)
-	rootCmd.SetArgs([]string{"reset", "acceptance"})
-	err := rootCmd.Execute()
-	// Expected to fail due to no config file, but the branch should be accepted
-	if err != nil && !containsStr(err.Error(), "no repositories") && !containsStr(err.Error(), "failed to load config") {
-		// If error is not about config, it's a different issue
-		t.Logf("command error: %v", err)
-	}
-}
-
-func TestGitResetNoRepositoriesConfigured(t *testing.T) {
-	// Create temp home with empty config
+func TestGitResetValidBranch(t *testing.T) {
 	tmpHome, err := os.MkdirTemp("", "test-home-*")
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
 	defer os.RemoveAll(tmpHome)
 
-	// Create empty config
+	// Create config with test repo
 	dcliDir := filepath.Join(tmpHome, ".dcli")
 	if err := os.MkdirAll(dcliDir, 0755); err != nil {
 		t.Fatalf("failed to create .dcli dir: %v", err)
 	}
 
-	configFile := filepath.Join(dcliDir, "config.yaml")
-	if err := os.WriteFile(configFile, []byte("repositories: []"), 0644); err != nil {
-		t.Fatalf("failed to write config: %v", err)
-	}
-
-	// Override HOME
-	oldHome := os.Getenv("HOME")
-	defer func() {
-		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
-		} else {
-			os.Unsetenv("HOME")
-		}
-	}()
-	os.Setenv("HOME", tmpHome)
-
-	// Create a fresh root command to test
-	rootCmd := &cobra.Command{}
-	rootCmd.AddCommand(gitResetCmd)
-	rootCmd.SetArgs([]string{"reset", "develop"})
-	err = rootCmd.Execute()
-	if err == nil {
-		t.Error("expected error for no repositories, got nil")
-	}
-
-	if err != nil && !containsStr(err.Error(), "no repositories") {
-		t.Errorf("expected error about no repositories, got: %v", err)
-	}
-}
-
-func TestGitResetWithConfiguration(t *testing.T) {
-	// Create temp home with valid config
-	tmpHome, err := os.MkdirTemp("", "test-home-*")
-	if err != nil {
-		t.Fatalf("failed to create temp home: %v", err)
-	}
-	defer os.RemoveAll(tmpHome)
-
-	// Create config with repositories
-	dcliDir := filepath.Join(tmpHome, ".dcli")
-	if err := os.MkdirAll(dcliDir, 0755); err != nil {
-		t.Fatalf("failed to create .dcli dir: %v", err)
+	// Create test repo directory
+	repoPath := filepath.Join(tmpHome, "test-repo")
+	if err := os.MkdirAll(repoPath, 0755); err != nil {
+		t.Fatalf("failed to create repo dir: %v", err)
 	}
 
 	configFile := filepath.Join(dcliDir, "config.yaml")
-	configContent := `repositories:
+	configContent := fmt.Sprintf(`repositories:
   - name: test-repo
-    path: /nonexistent/path
+    path: %s
     remote: origin
-`
+`, repoPath)
 	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
 		t.Fatalf("failed to write config: %v", err)
 	}
@@ -169,30 +50,373 @@ func TestGitResetWithConfiguration(t *testing.T) {
 	}()
 	os.Setenv("HOME", tmpHome)
 
-	// Create a fresh root command to test
+	mockHelper := &MockGitHelper{
+		IsGitRepoFn: func(path string) bool {
+			return true
+		},
+		FetchOriginFn: func(path string) error {
+			return nil
+		},
+		CheckoutBranchFn: func(path, branch string) error {
+			return nil
+		},
+		ResetHardFn: func(path, branch string) error {
+			return nil
+		},
+	}
+	setGitHelper(mockHelper)
+	defer resetGitHelper()
+
 	rootCmd := &cobra.Command{}
-	rootCmd.AddCommand(gitResetCmd)
-	rootCmd.SetArgs([]string{"reset", "develop"})
+	gitCmdLocal := &cobra.Command{Use: "git"}
+	rootCmd.AddCommand(gitCmdLocal)
+	gitCmdLocal.AddCommand(gitResetCmd)
+
+	rootCmd.SetArgs([]string{"git", "reset", "develop"})
 	err = rootCmd.Execute()
-	// Expected to fail because path doesn't exist, but config should load
-	if err != nil && !containsStr(err.Error(), "failed") && !containsStr(err.Error(), "some repositories") {
-		t.Logf("command error: %v", err)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// Verify git helper was called
+	if len(mockHelper.Calls.FetchOrigin) == 0 {
+		t.Error("expected FetchOrigin to be called")
+	}
+	if len(mockHelper.Calls.CheckoutBranch) == 0 {
+		t.Error("expected CheckoutBranch to be called")
+	}
+	if len(mockHelper.Calls.ResetHard) == 0 {
+		t.Error("expected ResetHard to be called")
 	}
 }
 
-func TestGitResetCommandStructure(t *testing.T) {
-	// Verify command structure
-	if gitResetCmd.Name() != "reset" {
-		t.Errorf("expected command name 'reset', got %s", gitResetCmd.Name())
+func TestGitResetAcceptanceBranch(t *testing.T) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	if err != nil {
+		t.Fatalf("failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tmpHome)
+
+	// Create config with test repo
+	dcliDir := filepath.Join(tmpHome, ".dcli")
+	if err := os.MkdirAll(dcliDir, 0755); err != nil {
+		t.Fatalf("failed to create .dcli dir: %v", err)
 	}
 
-	// Verify it requires exactly 1 argument
-	// This is set in the command definition with cobra.ExactArgs(1)
-	t.Logf("git reset command configured with ExactArgs requirement")
+	// Create test repo directory
+	repoPath := filepath.Join(tmpHome, "test-repo")
+	if err := os.MkdirAll(repoPath, 0755); err != nil {
+		t.Fatalf("failed to create repo dir: %v", err)
+	}
+
+	configFile := filepath.Join(dcliDir, "config.yaml")
+	configContent := fmt.Sprintf(`repositories:
+  - name: test-repo
+    path: %s
+    remote: origin
+`, repoPath)
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	// Override HOME
+	oldHome := os.Getenv("HOME")
+	defer func() {
+		if oldHome != "" {
+			os.Setenv("HOME", oldHome)
+		} else {
+			os.Unsetenv("HOME")
+		}
+	}()
+	os.Setenv("HOME", tmpHome)
+
+	mockHelper := &MockGitHelper{
+		IsGitRepoFn: func(path string) bool {
+			return true
+		},
+		FetchOriginFn: func(path string) error {
+			return nil
+		},
+		CheckoutBranchFn: func(path, branch string) error {
+			return nil
+		},
+		ResetHardFn: func(path, branch string) error {
+			return nil
+		},
+	}
+	setGitHelper(mockHelper)
+	defer resetGitHelper()
+
+	rootCmd := &cobra.Command{}
+	gitCmdLocal := &cobra.Command{Use: "git"}
+	rootCmd.AddCommand(gitCmdLocal)
+	gitCmdLocal.AddCommand(gitResetCmd)
+
+	rootCmd.SetArgs([]string{"git", "reset", "acceptance"})
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// Verify git operations were called
+	if len(mockHelper.Calls.FetchOrigin) == 0 {
+		t.Error("expected FetchOrigin to be called")
+	}
+	if len(mockHelper.Calls.CheckoutBranch) == 0 {
+		t.Error("expected CheckoutBranch to be called")
+	}
+	if len(mockHelper.Calls.ResetHard) == 0 {
+		t.Error("expected ResetHard to be called")
+	}
+}
+
+func TestGitResetInvalidBranch(t *testing.T) {
+	rootCmd := &cobra.Command{}
+	gitCmdLocal := &cobra.Command{Use: "git"}
+	rootCmd.AddCommand(gitCmdLocal)
+	gitCmdLocal.AddCommand(gitResetCmd)
+
+	rootCmd.SetArgs([]string{"git", "reset", "invalid-branch"})
+	err := rootCmd.Execute()
+	if err == nil {
+		t.Error("expected error for invalid branch, got nil")
+	}
+
+	// Verify error message mentions allowed branches
+	if err != nil {
+		errMsg := err.Error()
+		if errMsg != "branch must be 'develop' or 'acceptance', got 'invalid-branch'" {
+			t.Errorf("unexpected error message: %v", err)
+		}
+	}
+}
+
+func TestGitResetFetchOrigin(t *testing.T) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	if err != nil {
+		t.Fatalf("failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tmpHome)
+
+	// Create config with test repo
+	dcliDir := filepath.Join(tmpHome, ".dcli")
+	if err := os.MkdirAll(dcliDir, 0755); err != nil {
+		t.Fatalf("failed to create .dcli dir: %v", err)
+	}
+
+	// Create test repo directory
+	repoPath := filepath.Join(tmpHome, "test-repo")
+	if err := os.MkdirAll(repoPath, 0755); err != nil {
+		t.Fatalf("failed to create repo dir: %v", err)
+	}
+
+	configFile := filepath.Join(dcliDir, "config.yaml")
+	configContent := fmt.Sprintf(`repositories:
+  - name: test-repo
+    path: %s
+    remote: origin
+`, repoPath)
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	// Override HOME
+	oldHome := os.Getenv("HOME")
+	defer func() {
+		if oldHome != "" {
+			os.Setenv("HOME", oldHome)
+		} else {
+			os.Unsetenv("HOME")
+		}
+	}()
+	os.Setenv("HOME", tmpHome)
+
+	fetchOriginCalled := false
+	mockHelper := &MockGitHelper{
+		IsGitRepoFn: func(path string) bool {
+			return true
+		},
+		FetchOriginFn: func(path string) error {
+			fetchOriginCalled = true
+			return nil
+		},
+		CheckoutBranchFn: func(path, branch string) error {
+			return nil
+		},
+		ResetHardFn: func(path, branch string) error {
+			return nil
+		},
+	}
+	setGitHelper(mockHelper)
+	defer resetGitHelper()
+
+	rootCmd := &cobra.Command{}
+	gitCmdLocal := &cobra.Command{Use: "git"}
+	rootCmd.AddCommand(gitCmdLocal)
+	gitCmdLocal.AddCommand(gitResetCmd)
+
+	rootCmd.SetArgs([]string{"git", "reset", "develop"})
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if !fetchOriginCalled {
+		t.Error("expected FetchOrigin to be called")
+	}
+}
+
+func TestGitResetCheckoutBranch(t *testing.T) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	if err != nil {
+		t.Fatalf("failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tmpHome)
+
+	// Create config with test repo
+	dcliDir := filepath.Join(tmpHome, ".dcli")
+	if err := os.MkdirAll(dcliDir, 0755); err != nil {
+		t.Fatalf("failed to create .dcli dir: %v", err)
+	}
+
+	// Create test repo directory
+	repoPath := filepath.Join(tmpHome, "test-repo")
+	if err := os.MkdirAll(repoPath, 0755); err != nil {
+		t.Fatalf("failed to create repo dir: %v", err)
+	}
+
+	configFile := filepath.Join(dcliDir, "config.yaml")
+	configContent := fmt.Sprintf(`repositories:
+  - name: test-repo
+    path: %s
+    remote: origin
+`, repoPath)
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	// Override HOME
+	oldHome := os.Getenv("HOME")
+	defer func() {
+		if oldHome != "" {
+			os.Setenv("HOME", oldHome)
+		} else {
+			os.Unsetenv("HOME")
+		}
+	}()
+	os.Setenv("HOME", tmpHome)
+
+	var checkoutBranch string
+	mockHelper := &MockGitHelper{
+		IsGitRepoFn: func(path string) bool {
+			return true
+		},
+		FetchOriginFn: func(path string) error {
+			return nil
+		},
+		CheckoutBranchFn: func(path, branch string) error {
+			checkoutBranch = branch
+			return nil
+		},
+		ResetHardFn: func(path, branch string) error {
+			return nil
+		},
+	}
+	setGitHelper(mockHelper)
+	defer resetGitHelper()
+
+	rootCmd := &cobra.Command{}
+	gitCmdLocal := &cobra.Command{Use: "git"}
+	rootCmd.AddCommand(gitCmdLocal)
+	gitCmdLocal.AddCommand(gitResetCmd)
+
+	rootCmd.SetArgs([]string{"git", "reset", "acceptance"})
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if checkoutBranch != "acceptance" {
+		t.Errorf("expected checkout branch 'acceptance', got '%s'", checkoutBranch)
+	}
+}
+
+func TestGitResetHardReset(t *testing.T) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	if err != nil {
+		t.Fatalf("failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tmpHome)
+
+	// Create config with test repo
+	dcliDir := filepath.Join(tmpHome, ".dcli")
+	if err := os.MkdirAll(dcliDir, 0755); err != nil {
+		t.Fatalf("failed to create .dcli dir: %v", err)
+	}
+
+	// Create test repo directory
+	repoPath := filepath.Join(tmpHome, "test-repo")
+	if err := os.MkdirAll(repoPath, 0755); err != nil {
+		t.Fatalf("failed to create repo dir: %v", err)
+	}
+
+	configFile := filepath.Join(dcliDir, "config.yaml")
+	configContent := fmt.Sprintf(`repositories:
+  - name: test-repo
+    path: %s
+    remote: origin
+`, repoPath)
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	// Override HOME
+	oldHome := os.Getenv("HOME")
+	defer func() {
+		if oldHome != "" {
+			os.Setenv("HOME", oldHome)
+		} else {
+			os.Unsetenv("HOME")
+		}
+	}()
+	os.Setenv("HOME", tmpHome)
+
+	resetHardCalled := false
+	mockHelper := &MockGitHelper{
+		IsGitRepoFn: func(path string) bool {
+			return true
+		},
+		FetchOriginFn: func(path string) error {
+			return nil
+		},
+		CheckoutBranchFn: func(path, branch string) error {
+			return nil
+		},
+		ResetHardFn: func(path, branch string) error {
+			resetHardCalled = true
+			return nil
+		},
+	}
+	setGitHelper(mockHelper)
+	defer resetGitHelper()
+
+	rootCmd := &cobra.Command{}
+	gitCmdLocal := &cobra.Command{Use: "git"}
+	rootCmd.AddCommand(gitCmdLocal)
+	gitCmdLocal.AddCommand(gitResetCmd)
+
+	rootCmd.SetArgs([]string{"git", "reset", "develop"})
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if !resetHardCalled {
+		t.Error("expected ResetHard to be called")
+	}
 }
 
 func TestGitResetConfigLoading(t *testing.T) {
-	// Test that config loading works properly
 	tmpHome, err := os.MkdirTemp("", "test-home-*")
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
@@ -246,11 +470,347 @@ func TestGitResetConfigLoading(t *testing.T) {
 	}
 }
 
-func containsStr(s, substr string) bool {
-	for i := 0; i < len(s)-len(substr)+1; i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
+func TestGitResetEmptyConfig(t *testing.T) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	if err != nil {
+		t.Fatalf("failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tmpHome)
+
+	// Create empty config
+	dcliDir := filepath.Join(tmpHome, ".dcli")
+	if err := os.MkdirAll(dcliDir, 0755); err != nil {
+		t.Fatalf("failed to create .dcli dir: %v", err)
+	}
+
+	configFile := filepath.Join(dcliDir, "config.yaml")
+	if err := os.WriteFile(configFile, []byte("repositories: []"), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	// Override HOME
+	oldHome := os.Getenv("HOME")
+	defer func() {
+		if oldHome != "" {
+			os.Setenv("HOME", oldHome)
+		} else {
+			os.Unsetenv("HOME")
+		}
+	}()
+	os.Setenv("HOME", tmpHome)
+
+	rootCmd := &cobra.Command{}
+	gitCmdLocal := &cobra.Command{Use: "git"}
+	rootCmd.AddCommand(gitCmdLocal)
+	gitCmdLocal.AddCommand(gitResetCmd)
+
+	rootCmd.SetArgs([]string{"git", "reset", "develop"})
+	err = rootCmd.Execute()
+	if err == nil {
+		t.Error("expected error for no repositories, got nil")
+	}
+
+	if err != nil {
+		errMsg := err.Error()
+		if errMsg != "no repositories configured in ~/.dcli/config.yaml" {
+			t.Errorf("unexpected error message: %v", err)
 		}
 	}
-	return false
+}
+
+func TestGitResetMultipleRepos(t *testing.T) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	if err != nil {
+		t.Fatalf("failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tmpHome)
+
+	// Create config with multiple repos
+	dcliDir := filepath.Join(tmpHome, ".dcli")
+	if err := os.MkdirAll(dcliDir, 0755); err != nil {
+		t.Fatalf("failed to create .dcli dir: %v", err)
+	}
+
+	// Create test repo directories
+	repo1Path := filepath.Join(tmpHome, "repo1")
+	repo2Path := filepath.Join(tmpHome, "repo2")
+	repo3Path := filepath.Join(tmpHome, "repo3")
+	for _, p := range []string{repo1Path, repo2Path, repo3Path} {
+		if err := os.MkdirAll(p, 0755); err != nil {
+			t.Fatalf("failed to create repo dir: %v", err)
+		}
+	}
+
+	configFile := filepath.Join(dcliDir, "config.yaml")
+	configContent := fmt.Sprintf(`repositories:
+  - name: repo1
+    path: %s
+    remote: origin
+  - name: repo2
+    path: %s
+    remote: origin
+  - name: repo3
+    path: %s
+    remote: origin
+`, repo1Path, repo2Path, repo3Path)
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	// Override HOME
+	oldHome := os.Getenv("HOME")
+	defer func() {
+		if oldHome != "" {
+			os.Setenv("HOME", oldHome)
+		} else {
+			os.Unsetenv("HOME")
+		}
+	}()
+	os.Setenv("HOME", tmpHome)
+
+	mockHelper := &MockGitHelper{
+		IsGitRepoFn: func(path string) bool {
+			return true
+		},
+		FetchOriginFn: func(path string) error {
+			return nil
+		},
+		CheckoutBranchFn: func(path, branch string) error {
+			return nil
+		},
+		ResetHardFn: func(path, branch string) error {
+			return nil
+		},
+	}
+	setGitHelper(mockHelper)
+	defer resetGitHelper()
+
+	rootCmd := &cobra.Command{}
+	gitCmdLocal := &cobra.Command{Use: "git"}
+	rootCmd.AddCommand(gitCmdLocal)
+	gitCmdLocal.AddCommand(gitResetCmd)
+
+	rootCmd.SetArgs([]string{"git", "reset", "develop"})
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// Verify git operations were called for each repo
+	if len(mockHelper.Calls.FetchOrigin) != 3 {
+		t.Errorf("expected FetchOrigin to be called 3 times, got %d", len(mockHelper.Calls.FetchOrigin))
+	}
+	if len(mockHelper.Calls.CheckoutBranch) != 3 {
+		t.Errorf("expected CheckoutBranch to be called 3 times, got %d", len(mockHelper.Calls.CheckoutBranch))
+	}
+	if len(mockHelper.Calls.ResetHard) != 3 {
+		t.Errorf("expected ResetHard to be called 3 times, got %d", len(mockHelper.Calls.ResetHard))
+	}
+}
+
+func TestGitResetCommandMetadata(t *testing.T) {
+	if gitResetCmd.Use != "reset [develop|acceptance]" {
+		t.Errorf("expected Use 'reset [develop|acceptance]', got %s", gitResetCmd.Use)
+	}
+
+	if gitResetCmd.Short == "" {
+		t.Error("expected non-empty Short description")
+	}
+
+	if gitResetCmd.Long == "" {
+		t.Error("expected non-empty Long description")
+	}
+
+	if gitResetCmd.RunE == nil {
+		t.Error("expected RunE function to be defined")
+	}
+}
+
+func TestGitResetWithHelp(t *testing.T) {
+	rootCmd := &cobra.Command{}
+	gitCmdLocal := &cobra.Command{Use: "git"}
+	rootCmd.AddCommand(gitCmdLocal)
+	gitCmdLocal.AddCommand(gitResetCmd)
+
+	rootCmd.SetArgs([]string{"git", "reset", "--help"})
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestGitResetFetchOriginBeforeCheckout(t *testing.T) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	if err != nil {
+		t.Fatalf("failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tmpHome)
+
+	// Create config with test repo
+	dcliDir := filepath.Join(tmpHome, ".dcli")
+	if err := os.MkdirAll(dcliDir, 0755); err != nil {
+		t.Fatalf("failed to create .dcli dir: %v", err)
+	}
+
+	// Create test repo directory
+	repoPath := filepath.Join(tmpHome, "test-repo")
+	if err := os.MkdirAll(repoPath, 0755); err != nil {
+		t.Fatalf("failed to create repo dir: %v", err)
+	}
+
+	configFile := filepath.Join(dcliDir, "config.yaml")
+	configContent := fmt.Sprintf(`repositories:
+  - name: test-repo
+    path: %s
+    remote: origin
+`, repoPath)
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	// Override HOME
+	oldHome := os.Getenv("HOME")
+	defer func() {
+		if oldHome != "" {
+			os.Setenv("HOME", oldHome)
+		} else {
+			os.Unsetenv("HOME")
+		}
+	}()
+	os.Setenv("HOME", tmpHome)
+
+	callOrder := []string{}
+	mockHelper := &MockGitHelper{
+		IsGitRepoFn: func(path string) bool {
+			return true
+		},
+		FetchOriginFn: func(path string) error {
+			callOrder = append(callOrder, "fetch")
+			return nil
+		},
+		CheckoutBranchFn: func(path, branch string) error {
+			callOrder = append(callOrder, "checkout")
+			return nil
+		},
+		ResetHardFn: func(path, branch string) error {
+			callOrder = append(callOrder, "reset")
+			return nil
+		},
+	}
+	setGitHelper(mockHelper)
+	defer resetGitHelper()
+
+	rootCmd := &cobra.Command{}
+	gitCmdLocal := &cobra.Command{Use: "git"}
+	rootCmd.AddCommand(gitCmdLocal)
+	localResetCmd := &cobra.Command{
+		Use:   gitResetCmd.Use,
+		Short: gitResetCmd.Short,
+		Long:  gitResetCmd.Long,
+		Args:  gitResetCmd.Args,
+		RunE:  gitResetCmd.RunE,
+	}
+	gitCmdLocal.AddCommand(localResetCmd)
+
+	rootCmd.SetArgs([]string{"git", "reset", "develop"})
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// Verify call order: fetch -> checkout -> reset
+	if len(callOrder) < 3 {
+		t.Errorf("expected at least 3 calls, got %d", len(callOrder))
+	}
+	if len(callOrder) >= 3 {
+		if callOrder[0] != "fetch" {
+			t.Errorf("expected first call to be 'fetch', got '%s'", callOrder[0])
+		}
+		if callOrder[1] != "checkout" {
+			t.Errorf("expected second call to be 'checkout', got '%s'", callOrder[1])
+		}
+		if callOrder[2] != "reset" {
+			t.Errorf("expected third call to be 'reset', got '%s'", callOrder[2])
+		}
+	}
+}
+
+func TestGitResetFetchOriginError(t *testing.T) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	if err != nil {
+		t.Fatalf("failed to create temp home: %v", err)
+	}
+	defer os.RemoveAll(tmpHome)
+
+	// Create config with test repo
+	dcliDir := filepath.Join(tmpHome, ".dcli")
+	if err := os.MkdirAll(dcliDir, 0755); err != nil {
+		t.Fatalf("failed to create .dcli dir: %v", err)
+	}
+
+	// Create test repo directory
+	repoPath := filepath.Join(tmpHome, "test-repo")
+	if err := os.MkdirAll(repoPath, 0755); err != nil {
+		t.Fatalf("failed to create repo dir: %v", err)
+	}
+
+	configFile := filepath.Join(dcliDir, "config.yaml")
+	configContent := fmt.Sprintf(`repositories:
+  - name: test-repo
+    path: %s
+    remote: origin
+`, repoPath)
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	// Override HOME
+	oldHome := os.Getenv("HOME")
+	defer func() {
+		if oldHome != "" {
+			os.Setenv("HOME", oldHome)
+		} else {
+			os.Unsetenv("HOME")
+		}
+	}()
+	os.Setenv("HOME", tmpHome)
+
+	mockHelper := &MockGitHelper{
+		IsGitRepoFn: func(path string) bool {
+			return true
+		},
+		FetchOriginFn: func(path string) error {
+			return fmt.Errorf("fetch failed")
+		},
+		CheckoutBranchFn: func(path, branch string) error {
+			return nil
+		},
+		ResetHardFn: func(path, branch string) error {
+			return nil
+		},
+	}
+	setGitHelper(mockHelper)
+	defer resetGitHelper()
+
+	rootCmd := &cobra.Command{}
+	gitCmdLocal := &cobra.Command{Use: "git"}
+	rootCmd.AddCommand(gitCmdLocal)
+	localResetCmd := &cobra.Command{
+		Use:   gitResetCmd.Use,
+		Short: gitResetCmd.Short,
+		Long:  gitResetCmd.Long,
+		Args:  gitResetCmd.Args,
+		RunE:  gitResetCmd.RunE,
+	}
+	gitCmdLocal.AddCommand(localResetCmd)
+
+	rootCmd.SetArgs([]string{"git", "reset", "develop"})
+	err = rootCmd.Execute()
+	if err == nil {
+		t.Error("expected error when fetch fails, got nil")
+	}
+
+	if err != nil && err.Error() != "some repositories failed to reset" {
+		t.Logf("got expected error: %v", err)
+	}
 }
