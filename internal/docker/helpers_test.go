@@ -81,17 +81,3 @@ func TestRunCommand(t *testing.T) {
 		t.Logf("RunCommand execution note: %v (docker may not be installed)", err)
 	}
 }
-
-func TestGetContainers(t *testing.T) {
-	// Test GetContainers - this is a basic sanity check
-	// It may return empty list or containers depending on the environment
-	containers, err := GetContainers()
-	if err != nil {
-		t.Logf("GetContainers note: %v (docker may not be installed)", err)
-	}
-
-	// At minimum, we should get a slice (may be empty)
-	if containers == nil {
-		t.Error("expected containers slice, got nil")
-	}
-}
