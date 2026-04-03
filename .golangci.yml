@@ -14,16 +14,13 @@ linters:
     - errcheck       # Error checking
     - staticcheck    # Static analysis
     - gosimple       # Code simplification
-    - typecheck      # Type checking
     - ineffassign    # Ineffectual assignments
-
-linters-settings:
-  gosec:
-    severity: "medium"
-    confidence: "medium"
-
-issues:
-  exclude-rules:
-    - path: "_test.go$"
-      linters:
-        - gosec
+  settings:
+    gosec:
+      severity: "medium"
+      confidence: "medium"
+  exclusions:
+    rules:
+      - path: "_test.go$"
+        linters:
+          - gosec
