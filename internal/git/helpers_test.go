@@ -337,6 +337,34 @@ func TestGetRemoteURLNoRemote(t *testing.T) {
 	}
 }
 
+func TestValidateBranchTarget(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		err := ValidateBranchTarget("")
+		if err == nil {
+			t.Fatal("expected error for empty branch, got nil")
+		}
+		if err.Error() != "branch name cannot be empty or whitespace" {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("whitespace", func(t *testing.T) {
+		err := ValidateBranchTarget("   \t  ")
+		if err == nil {
+			t.Fatal("expected error for whitespace branch, got nil")
+		}
+		if err.Error() != "branch name cannot be empty or whitespace" {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("valid", func(t *testing.T) {
+		if err := ValidateBranchTarget("main"); err != nil {
+			t.Fatalf("expected valid branch, got %v", err)
+		}
+	})
+}
+
 func TestFetchOriginNoRemote(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "test-git-*")
 	if err != nil {

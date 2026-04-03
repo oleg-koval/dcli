@@ -21,7 +21,7 @@
 ## Features
 
 - 🐳 **Docker Management** - Clean containers/volumes, rebuild, and restart services
-- 🔄 **Git Batch Operations** - Reset multiple repositories to any remote branch
+- 🔄 **Git Batch Operations** - Reset multiple repositories to any branch on origin
 - 🚀 **Homebrew Distribution** - Install with a single command: `brew install dcli`
 - 🖥️ **Cross-Platform** - Works on macOS (Intel & Apple Silicon), Linux, and Windows
 - ⚙️ **YAML Configuration** - Simple config file at `~/.dcli/config.yaml`
