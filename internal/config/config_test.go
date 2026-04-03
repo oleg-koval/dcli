@@ -22,6 +22,14 @@ func unsetEnv(t *testing.T, key string) {
 	}
 }
 
+func removeAll(t *testing.T, path string) {
+	t.Helper()
+
+	if err := os.RemoveAll(path); err != nil {
+		t.Fatalf("failed to remove %s: %v", path, err)
+	}
+}
+
 func TestGetConfigPath(t *testing.T) {
 	path, err := GetConfigPath()
 	if err != nil {
@@ -45,7 +53,7 @@ func TestLoadConfigFileNotExist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	// Override HOME environment variable
 	oldHome := os.Getenv("HOME")
@@ -78,7 +86,7 @@ func TestLoadConfigValid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	// Create .dcli directory
 	dcliDir := filepath.Join(tmpHome, ".dcli")
@@ -138,7 +146,7 @@ func TestLoadConfigInvalidYAML(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	dcliDir := filepath.Join(tmpHome, ".dcli")
 	if err := os.MkdirAll(dcliDir, 0755); err != nil {
@@ -176,7 +184,7 @@ func TestLoadConfigEmptyFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	dcliDir := filepath.Join(tmpHome, ".dcli")
 	if err := os.MkdirAll(dcliDir, 0755); err != nil {
@@ -218,7 +226,7 @@ func TestSaveConfigCreateDir(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	oldHome := os.Getenv("HOME")
 	defer func() {
@@ -256,17 +264,17 @@ func TestSaveConfigWrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	cfg := &Config{
 		Repositories: []Repository{
@@ -316,17 +324,17 @@ func TestSaveAndLoadRoundtrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	// Create original config
 	originalCfg := &Config{

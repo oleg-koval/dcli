@@ -189,7 +189,7 @@ func TestGetServicesMultipleServices(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer removeAll(t, tmpDir)
 
 	// Create a docker-compose.yml with multiple services
 	composeContent := `version: '3'
