@@ -63,33 +63,29 @@ release:
     ./bin/dcli --version
     ```
 
-# Homebrew tap integration disabled until PAT with cross-repo access is available
-# To enable: Create a personal access token with repo write access to homebrew-dcli
-# and pass it as GITHUB_TOKEN to the release job
-#
-# brews:
-#   - name: dcli
-#     tap:
-#       owner: oleg-koval
-#       name: homebrew-dcli
-#       branch: main
-#     commit_author:
-#       name: dcli-bot
-#       email: bot@dcli.dev
-#     commit_msg_template: 'chore(release): update dcli formula to {{ .Version }}'
-#     homepage: https://github.com/oleg-koval/dcli
-#     description: Lightweight Docker Compose and Git management CLI
-#     license: MIT
-#     folder: Formula
-#     install: |
-#       bin.install "dcli"
-#     test: |
-#       system "#{bin}/dcli --version"
-#     dependencies:
-#       - name: docker
-#         type: optional
-#       - name: git
-#         type: optional
+brews:
+  - name: dcli
+    tap:
+      owner: oleg-koval
+      name: homebrew-dcli
+      branch: main
+    commit_author:
+      name: dcli-bot
+      email: bot@dcli.dev
+    commit_msg_template: 'chore(release): update dcli formula to {{ .Version }}'
+    homepage: https://github.com/oleg-koval/dcli
+    description: Lightweight Docker Compose and Git management CLI
+    license: MIT
+    folder: Formula
+    install: |
+      bin.install "dcli"
+    test: |
+      system "#{bin}/dcli --version"
+    dependencies:
+      - name: docker
+        type: optional
+      - name: git
+        type: optional
 
 changelog:
   skip: false
