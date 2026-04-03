@@ -59,17 +59,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ steps.version.outputs.version }}
-
-  update-homebrew:
-    name: Update Homebrew Tap
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger homebrew-dcli workflow
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          script: |
-            // The GoReleaser Homebrew integration will automatically update the tap
-            // This step is a placeholder for any additional Homebrew tap sync if needed
-            console.log('Homebrew tap update triggered via GoReleaser')
