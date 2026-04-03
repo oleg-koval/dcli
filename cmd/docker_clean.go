@@ -8,6 +8,30 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// DockerHelper defines the interface for Docker operations
+type DockerHelper interface {
+	GetServices(projectDir string) ([]string, error)
+	RunCommand(projectDir string, args ...string) error
+	GetContainers() ([]string, error)
+}
+
+// Global helper - will be overridden in tests
+var dockerHelper DockerHelper = &defaultDockerHelper{}
+
+type defaultDockerHelper struct{}
+
+func (d *defaultDockerHelper) GetServices(projectDir string) ([]string, error) {
+	return docker.GetServices(projectDir)
+}
+
+func (d *defaultDockerHelper) RunCommand(projectDir string, args ...string) error {
+	return docker.RunCommand(projectDir, args...)
+}
+
+func (d *defaultDockerHelper) GetContainers() ([]string, error) {
+	return docker.GetContainers()
+}
+
 var dockerCleanCmd = &cobra.Command{
 	Use:   "clean [services...]",
 	Short: "Clean up and rebuild Docker containers and volumes",
@@ -28,7 +52,7 @@ If no services are specified, all services are cleaned.`,
 			services = args
 		} else {
 			// Get all available services
-			availableServices, err := docker.GetServices(projectDir)
+			availableServices, err := dockerHelper.GetServices(projectDir)
 			if err != nil {
 				return fmt.Errorf("failed to get services: %w", err)
 			}
@@ -49,7 +73,7 @@ If no services are specified, all services are cleaned.`,
 		// Remove containers and volumes
 		fmt.Println("🧹  Removing containers and volumes...")
 		rmArgs := append([]string{"compose", "rm", "-sfv"}, services...)
-		if err := docker.RunCommand(projectDir, rmArgs...); err != nil {
+		if err := dockerHelper.RunCommand(projectDir, rmArgs...); err != nil {
 			return fmt.Errorf("failed to remove containers: %w", err)
 		}
 		fmt.Println("✓ Containers and volumes removed")
@@ -58,7 +82,7 @@ If no services are specified, all services are cleaned.`,
 		// Rebuild images
 		fmt.Println("🔨  Building images...")
 		buildArgs := append([]string{"compose", "build"}, services...)
-		if err := docker.RunCommand(projectDir, buildArgs...); err != nil {
+		if err := dockerHelper.RunCommand(projectDir, buildArgs...); err != nil {
 			return fmt.Errorf("failed to build images: %w", err)
 		}
 		fmt.Println("✓ Images built")
@@ -67,7 +91,7 @@ If no services are specified, all services are cleaned.`,
 		// Start services
 		fmt.Println("🚀  Starting services...")
 		upArgs := append([]string{"compose", "up", "-d"}, services...)
-		if err := docker.RunCommand(projectDir, upArgs...); err != nil {
+		if err := dockerHelper.RunCommand(projectDir, upArgs...); err != nil {
 			return fmt.Errorf("failed to start services: %w", err)
 		}
 		fmt.Println("✓ Services started")

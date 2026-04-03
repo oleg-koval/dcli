@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/oleg-koval/dcli/internal/docker"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +26,7 @@ If no services are specified, all services are restarted.`,
 			services = args
 		} else {
 			// Get all available services
-			availableServices, err := docker.GetServices(projectDir)
+			availableServices, err := dockerHelper.GetServices(projectDir)
 			if err != nil {
 				return fmt.Errorf("failed to get services: %w", err)
 			}
@@ -50,7 +49,7 @@ If no services are specified, all services are restarted.`,
 		// Stop containers
 		fmt.Println("⏸️  Stopping containers (preserving all volumes & data)...")
 		stopArgs := append([]string{"compose", "stop"}, services...)
-		if err := docker.RunCommand(projectDir, stopArgs...); err != nil {
+		if err := dockerHelper.RunCommand(projectDir, stopArgs...); err != nil {
 			fmt.Fprintf(os.Stderr, "warning: failed to stop containers: %v\n", err)
 		}
 
@@ -58,7 +57,7 @@ If no services are specified, all services are restarted.`,
 		fmt.Println("──────────────────────────────")
 		fmt.Println("🚀 Starting services...")
 		upArgs := append([]string{"compose", "up", "-d"}, services...)
-		if err := docker.RunCommand(projectDir, upArgs...); err != nil {
+		if err := dockerHelper.RunCommand(projectDir, upArgs...); err != nil {
 			return fmt.Errorf("failed to start services: %w", err)
 		}
 
