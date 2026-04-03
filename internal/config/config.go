@@ -36,16 +36,6 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get home directory: %w", err)
-	}
-
-	expectedPath := filepath.Join(homeDir, ".dcli", "config.yaml")
-	if filepath.Clean(configPath) != filepath.Clean(expectedPath) {
-		return nil, fmt.Errorf("invalid config path")
-	}
-
 	data, err := os.ReadFile(configPath) // #nosec G304 -- configPath is validated against the user's HOME directory
 	if err != nil {
 		if os.IsNotExist(err) {
