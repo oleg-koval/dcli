@@ -170,7 +170,7 @@ func TestGitResetAcceptanceBranch(t *testing.T) {
 	}
 }
 
-func TestGitResetCustomBranch(t *testing.T) {
+func TestGitResetInvalidBranch(t *testing.T) {
 	tmpHome, err := os.MkdirTemp("", "test-home-*")
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
@@ -231,21 +231,11 @@ func TestGitResetCustomBranch(t *testing.T) {
 
 	rootCmd.SetArgs([]string{"git", "reset", "main"})
 	err = rootCmd.Execute()
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
+	if err == nil {
+		t.Fatal("expected error for invalid branch, got nil")
 	}
-
-	if len(mockHelper.Calls.CheckoutBranch) != 1 {
-		t.Fatalf("expected CheckoutBranch to be called once, got %d", len(mockHelper.Calls.CheckoutBranch))
-	}
-	if mockHelper.Calls.CheckoutBranch[0].Branch != "main" {
-		t.Errorf("expected checkout branch 'main', got %q", mockHelper.Calls.CheckoutBranch[0].Branch)
-	}
-	if len(mockHelper.Calls.ResetHard) != 1 {
-		t.Fatalf("expected ResetHard to be called once, got %d", len(mockHelper.Calls.ResetHard))
-	}
-	if mockHelper.Calls.ResetHard[0].Branch != "origin/main" {
-		t.Errorf("expected reset target 'origin/main', got %q", mockHelper.Calls.ResetHard[0].Branch)
+	if err.Error() != "branch must be 'develop' or 'acceptance', got 'main'" {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
@@ -670,8 +660,8 @@ func TestGitResetMultipleRepos(t *testing.T) {
 }
 
 func TestGitResetCommandMetadata(t *testing.T) {
-	if gitResetCmd.Use != "reset <branch>" {
-		t.Errorf("expected Use 'reset <branch>', got %s", gitResetCmd.Use)
+	if gitResetCmd.Use != "reset [develop|acceptance]" {
+		t.Errorf("expected Use 'reset [develop|acceptance]', got %s", gitResetCmd.Use)
 	}
 
 	if gitResetCmd.Short == "" {

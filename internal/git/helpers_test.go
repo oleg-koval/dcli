@@ -367,8 +367,21 @@ func TestValidateBranchTarget(t *testing.T) {
 	})
 
 	t.Run("valid", func(t *testing.T) {
-		if err := ValidateBranchTarget("main"); err != nil {
+		if err := ValidateBranchTarget("develop"); err != nil {
 			t.Fatalf("expected valid branch, got %v", err)
+		}
+		if err := ValidateBranchTarget("acceptance"); err != nil {
+			t.Fatalf("expected valid branch, got %v", err)
+		}
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		err := ValidateBranchTarget("main")
+		if err == nil {
+			t.Fatal("expected error for invalid branch, got nil")
+		}
+		if err.Error() != "branch must be 'develop' or 'acceptance', got 'main'" {
+			t.Fatalf("unexpected error: %v", err)
 		}
 	})
 }

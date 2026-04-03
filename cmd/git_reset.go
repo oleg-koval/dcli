@@ -5,16 +5,20 @@ import (
 	"os"
 
 	"github.com/oleg-koval/dcli/internal/config"
+	"github.com/oleg-koval/dcli/internal/git"
 	"github.com/spf13/cobra"
 )
 
 var gitResetCmd = &cobra.Command{
-	Use:   "reset <branch>",
+	Use:   "reset [develop|acceptance]",
 	Short: "Reset all configured repositories to a branch",
 	Long:  "Fetch, checkout, and hard reset all repositories to specified branch",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		branch := args[0]
+		if err := git.ValidateBranchTarget(branch); err != nil {
+			return err
+		}
 
 		cfg, err := config.Load()
 		if err != nil {

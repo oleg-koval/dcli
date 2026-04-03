@@ -75,8 +75,8 @@ dcli docker restart api
 # Reset all configured repos to develop
 dcli git reset develop
 
-# Reset all configured repos to main
-dcli git reset main
+# Reset all configured repos to develop
+dcli git reset develop
 ```
 
 ## Configuration
@@ -119,7 +119,7 @@ dcli docker restart [service ...]    # Restart services (preserves data)
 ### Git Subcommand
 
 ```
-dcli git reset <branch>              # Reset all configured repos to specified branch
+dcli git reset [develop|acceptance]  # Reset all configured repos to specified branch
 ```
 
 ## System Requirements
@@ -139,7 +139,7 @@ dcli git reset <branch>              # Reset all configured repos to specified b
 
 ### Development Workflow
 
-Reset your working environment to the branch you need:
+Reset your working environment to latest develop:
 ```bash
 dcli git reset develop      # Fetch and reset all repos
 dcli docker clean           # Clean all containers and volumes
@@ -159,7 +159,7 @@ dcli docker restart web api  # Restart specific services
 Configure all microservices and reset with one command:
 ```bash
 # In ~/.dcli/config.yaml: add all repo paths
-dcli git reset release/2026.04   # All services to the same release branch
+dcli git reset acceptance    # All services to acceptance branch
 dcli docker clean           # Clean all microservices
 ```
 

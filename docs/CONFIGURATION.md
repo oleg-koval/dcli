@@ -70,5 +70,5 @@ DCLI_PROJECT_DIR=/path/to/monorepo dcli docker clean backend frontend
 Edit `~/.dcli/config.yaml` with your actual paths, then:
 
 ```bash
-dcli git reset main
+dcli git reset develop
 ```
