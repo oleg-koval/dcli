@@ -18,7 +18,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.22'
+          go-version: '1.25'
 
       - name: Run tests
         run: go test -v -covermode=atomic ./...
@@ -26,7 +26,7 @@ jobs:
       - name: Run linter
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v1.64.8
+          version: v2.8.0
 
   release:
     needs: test-gate
@@ -39,7 +39,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.22'
+          go-version: '1.25'
 
       - name: Generate version from git
         id: version

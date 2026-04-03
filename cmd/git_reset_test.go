@@ -15,7 +15,7 @@ func TestGitResetValidBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	// Create config with test repo
 	dcliDir := filepath.Join(tmpHome, ".dcli")
@@ -43,12 +43,12 @@ func TestGitResetValidBranch(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	mockHelper := &MockGitHelper{
 		IsGitRepoFn: func(path string) bool {
@@ -95,7 +95,7 @@ func TestGitResetAcceptanceBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	// Create config with test repo
 	dcliDir := filepath.Join(tmpHome, ".dcli")
@@ -123,12 +123,12 @@ func TestGitResetAcceptanceBranch(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	mockHelper := &MockGitHelper{
 		IsGitRepoFn: func(path string) bool {
@@ -171,23 +171,71 @@ func TestGitResetAcceptanceBranch(t *testing.T) {
 }
 
 func TestGitResetInvalidBranch(t *testing.T) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	if err != nil {
+		t.Fatalf("failed to create temp home: %v", err)
+	}
+	defer removeAll(t, tmpHome)
+
+	dcliDir := filepath.Join(tmpHome, ".dcli")
+	if err := os.MkdirAll(dcliDir, 0755); err != nil {
+		t.Fatalf("failed to create .dcli dir: %v", err)
+	}
+
+	repoPath := filepath.Join(tmpHome, "test-repo")
+	if err := os.MkdirAll(repoPath, 0755); err != nil {
+		t.Fatalf("failed to create repo dir: %v", err)
+	}
+
+	configFile := filepath.Join(dcliDir, "config.yaml")
+	configContent := fmt.Sprintf(`repositories:
+  - name: test-repo
+    path: %s
+    remote: origin
+`, repoPath)
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	oldHome := os.Getenv("HOME")
+	defer func() {
+		if oldHome != "" {
+			setEnv(t, "HOME", oldHome)
+		} else {
+			unsetEnv(t, "HOME")
+		}
+	}()
+	setEnv(t, "HOME", tmpHome)
+
+	mockHelper := &MockGitHelper{
+		IsGitRepoFn: func(path string) bool {
+			return true
+		},
+		FetchOriginFn: func(path string) error {
+			return nil
+		},
+		CheckoutBranchFn: func(path, branch string) error {
+			return nil
+		},
+		ResetHardFn: func(path, branch string) error {
+			return nil
+		},
+	}
+	setGitHelper(mockHelper)
+	defer resetGitHelper()
+
 	rootCmd := &cobra.Command{}
 	gitCmdLocal := &cobra.Command{Use: "git"}
 	rootCmd.AddCommand(gitCmdLocal)
 	gitCmdLocal.AddCommand(gitResetCmd)
 
-	rootCmd.SetArgs([]string{"git", "reset", "invalid-branch"})
-	err := rootCmd.Execute()
+	rootCmd.SetArgs([]string{"git", "reset", "main"})
+	err = rootCmd.Execute()
 	if err == nil {
-		t.Error("expected error for invalid branch, got nil")
+		t.Fatal("expected error for invalid branch, got nil")
 	}
-
-	// Verify error message mentions allowed branches
-	if err != nil {
-		errMsg := err.Error()
-		if errMsg != "branch must be 'develop' or 'acceptance', got 'invalid-branch'" {
-			t.Errorf("unexpected error message: %v", err)
-		}
+	if err.Error() != "branch must be 'develop' or 'acceptance', got 'main'" {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
@@ -196,7 +244,7 @@ func TestGitResetFetchOrigin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	// Create config with test repo
 	dcliDir := filepath.Join(tmpHome, ".dcli")
@@ -224,12 +272,12 @@ func TestGitResetFetchOrigin(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	fetchOriginCalled := false
 	mockHelper := &MockGitHelper{
@@ -271,7 +319,7 @@ func TestGitResetCheckoutBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	// Create config with test repo
 	dcliDir := filepath.Join(tmpHome, ".dcli")
@@ -299,12 +347,12 @@ func TestGitResetCheckoutBranch(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	var checkoutBranch string
 	mockHelper := &MockGitHelper{
@@ -346,7 +394,7 @@ func TestGitResetHardReset(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	// Create config with test repo
 	dcliDir := filepath.Join(tmpHome, ".dcli")
@@ -374,12 +422,12 @@ func TestGitResetHardReset(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	var resetTarget string
 	mockHelper := &MockGitHelper{
@@ -424,7 +472,7 @@ func TestGitResetConfigLoading(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	dcliDir := filepath.Join(tmpHome, ".dcli")
 	if err := os.MkdirAll(dcliDir, 0755); err != nil {
@@ -447,12 +495,12 @@ func TestGitResetConfigLoading(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	// Load config directly to verify it works
 	cfg, err := config.Load()
@@ -478,7 +526,7 @@ func TestGitResetEmptyConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	// Create empty config
 	dcliDir := filepath.Join(tmpHome, ".dcli")
@@ -495,12 +543,12 @@ func TestGitResetEmptyConfig(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	rootCmd := &cobra.Command{}
 	gitCmdLocal := &cobra.Command{Use: "git"}
@@ -526,7 +574,7 @@ func TestGitResetMultipleRepos(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	// Create config with multiple repos
 	dcliDir := filepath.Join(tmpHome, ".dcli")
@@ -564,12 +612,12 @@ func TestGitResetMultipleRepos(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	mockHelper := &MockGitHelper{
 		IsGitRepoFn: func(path string) bool {
@@ -647,7 +695,7 @@ func TestGitResetFetchOriginBeforeCheckout(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	// Create config with test repo
 	dcliDir := filepath.Join(tmpHome, ".dcli")
@@ -675,12 +723,12 @@ func TestGitResetFetchOriginBeforeCheckout(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	callOrder := []string{}
 	mockHelper := &MockGitHelper{
@@ -743,7 +791,7 @@ func TestGitResetFetchOriginError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer os.RemoveAll(tmpHome)
+	defer removeAll(t, tmpHome)
 
 	// Create config with test repo
 	dcliDir := filepath.Join(tmpHome, ".dcli")
@@ -771,12 +819,12 @@ func TestGitResetFetchOriginError(t *testing.T) {
 	oldHome := os.Getenv("HOME")
 	defer func() {
 		if oldHome != "" {
-			os.Setenv("HOME", oldHome)
+			setEnv(t, "HOME", oldHome)
 		} else {
-			os.Unsetenv("HOME")
+			unsetEnv(t, "HOME")
 		}
 	}()
-	os.Setenv("HOME", tmpHome)
+	setEnv(t, "HOME", tmpHome)
 
 	mockHelper := &MockGitHelper{
 		IsGitRepoFn: func(path string) bool {

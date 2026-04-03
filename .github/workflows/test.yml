@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.21', '1.22']
+        go-version: ['1.25', 'stable']
     steps:
       - uses: actions/checkout@v4
 
@@ -28,11 +28,11 @@ jobs:
       - name: Run linter (SAST)
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v1.64.8
+          version: v2.8.0
           args: --timeout=5m
 
       - name: Upload coverage to Coveralls
-        if: matrix.go-version == '1.22'
+        if: matrix.go-version == '1.25'
         uses: coverallsapp/github-action@v2
         with:
           files: coverage.out
