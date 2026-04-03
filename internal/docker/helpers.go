@@ -39,7 +39,7 @@ func GetContainers() ([]string, error) {
 
 	containers := strings.Split(strings.TrimSpace(string(output)), "\n")
 	// Filter out empty strings
-	var filtered []string
+	filtered := []string{}
 	for _, c := range containers {
 		if c != "" {
 			filtered = append(filtered, c)
