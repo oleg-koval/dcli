@@ -62,11 +62,10 @@ func GetRemoteURL(path string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-// ValidateBranchTarget validates that a branch name is allowed for reset operations
-// Currently only "develop" and "acceptance" branches are permitted for safety
+// ValidateBranchTarget validates that a branch name is allowed for reset operations.
 func ValidateBranchTarget(branch string) error {
-	if branch == "" {
-		return fmt.Errorf("branch name cannot be empty")
+	if strings.TrimSpace(branch) == "" {
+		return fmt.Errorf("branch name cannot be empty or whitespace")
 	}
 	if branch != "develop" && branch != "acceptance" {
 		return fmt.Errorf("branch must be 'develop' or 'acceptance', got '%s'", branch)

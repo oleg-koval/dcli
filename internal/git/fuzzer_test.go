@@ -15,6 +15,7 @@ func FuzzGitReset(f *testing.F) {
 		"main",
 		"feature/test",
 		"",
+		"   ",
 		"branch-with-dash",
 		"branch_with_underscore",
 		"v1.0.0",
@@ -26,13 +27,7 @@ func FuzzGitReset(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, input string) {
 		// This fuzzer exercises the branch validation logic with arbitrary input
-		// ensuring no panics and proper error handling of invalid branch names
-		if input == "" {
-			return
-		}
-		err := ValidateBranchTarget(input)
-		// err can be nil (for valid branches) or non-nil (for invalid branches)
-		// The fuzzer verifies the function handles any input without panicking
-		_ = err
+		// ensuring no panics and proper error handling of invalid branch names.
+		_ = ValidateBranchTarget(input)
 	})
 }

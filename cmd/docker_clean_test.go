@@ -129,13 +129,13 @@ func TestDockerCleanProjectDirFromEnv(t *testing.T) {
 	oldProjectDir := os.Getenv("DCLI_PROJECT_DIR")
 	defer func() {
 		if oldProjectDir != "" {
-			os.Setenv("DCLI_PROJECT_DIR", oldProjectDir)
+			setEnv(t, "DCLI_PROJECT_DIR", oldProjectDir)
 		} else {
-			os.Unsetenv("DCLI_PROJECT_DIR")
+			unsetEnv(t, "DCLI_PROJECT_DIR")
 		}
 	}()
 
-	os.Setenv("DCLI_PROJECT_DIR", "/test/path")
+	setEnv(t, "DCLI_PROJECT_DIR", "/test/path")
 
 	mockHelper := &MockDockerHelper{
 		GetServicesFn: func(projectDir string) ([]string, error) {
