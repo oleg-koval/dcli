@@ -30,8 +30,7 @@ test:
 	go test -v -cover ./...
 
 lint:
-	@command -v golangci-lint >/dev/null 2>&1 || (echo "golangci-lint not found. Install with: brew install golangci-lint"; exit 1)
-	golangci-lint run
+	go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 run
 
 fuzz:
 	go test -fuzz=FuzzCleanCommand ./internal/docker -fuzztime=10s
