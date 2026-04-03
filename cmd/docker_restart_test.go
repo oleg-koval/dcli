@@ -2,91 +2,151 @@ package cmd
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
-func TestDockerRestartHelp(t *testing.T) {
-	dockerRestartCmd.SetArgs([]string{"--help"})
-	err := dockerRestartCmd.Execute()
+func TestDockerRestartWithValidServices(t *testing.T) {
+	mockHelper := &MockDockerHelper{
+		GetServicesFn: func(projectDir string) ([]string, error) {
+			return []string{"web", "db"}, nil
+		},
+		RunCommandFn: func(projectDir string, args ...string) error {
+			return nil
+		},
+	}
+	setDockerHelper(mockHelper)
+	defer resetDockerHelper()
+
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+	dockerCmd.AddCommand(dockerRestartCmd)
+
+	rootCmd.SetArgs([]string{"docker", "restart", "web", "db"})
+	err := rootCmd.Execute()
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-}
 
-func TestDockerRestartNoArgs(t *testing.T) {
-	dockerRestartCmd.SetArgs([]string{})
-	if dockerRestartCmd.Name() != "restart" {
-		t.Fatalf("expected command name 'restart', got %s", dockerRestartCmd.Name())
+	// Verify docker helper was called
+	if len(mockHelper.Calls.RunCommand) == 0 {
+		t.Error("expected RunCommand to be called")
 	}
 }
 
-func TestDockerRestartWithServiceArgs(t *testing.T) {
-	dockerRestartCmd.SetArgs([]string{"service1", "service2"})
-	if dockerRestartCmd.Name() != "restart" {
-		t.Fatalf("expected command name 'restart', got %s", dockerRestartCmd.Name())
+func TestDockerRestartWithNoServices(t *testing.T) {
+	mockHelper := &MockDockerHelper{
+		GetServicesFn: func(projectDir string) ([]string, error) {
+			return []string{"web", "db", "cache"}, nil
+		},
+		RunCommandFn: func(projectDir string, args ...string) error {
+			return nil
+		},
 	}
-}
+	setDockerHelper(mockHelper)
+	defer resetDockerHelper()
 
-func TestDockerRestartProjectDirHandling(t *testing.T) {
-	// Create a temporary directory for testing
-	tmpDir, err := os.MkdirTemp("", "test-docker-restart-*")
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+	dockerCmd.AddCommand(dockerRestartCmd)
+
+	rootCmd.SetArgs([]string{"docker", "restart"})
+	err := rootCmd.Execute()
 	if err != nil {
-		t.Fatalf("failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	// Create a minimal docker-compose.yml
-	composeContent := `version: '3'
-services:
-  test-service:
-    image: nginx
-`
-	composeFile := filepath.Join(tmpDir, "docker-compose.yml")
-	if err := os.WriteFile(composeFile, []byte(composeContent), 0644); err != nil {
-		t.Fatalf("failed to write docker-compose.yml: %v", err)
+		t.Fatalf("expected no error, got %v", err)
 	}
 
-	// Set DCLI_PROJECT_DIR environment variable
-	oldProjectDir := os.Getenv("DCLI_PROJECT_DIR")
-	defer func() {
-		if oldProjectDir != "" {
-			os.Setenv("DCLI_PROJECT_DIR", oldProjectDir)
-		} else {
-			os.Unsetenv("DCLI_PROJECT_DIR")
-		}
-	}()
-
-	os.Setenv("DCLI_PROJECT_DIR", tmpDir)
-
-	// Test that DCLI_PROJECT_DIR is properly read and used
-	// Note: This test verifies the env var is read; actual command execution
-	// requires docker to be installed and running
-	projectDir := os.Getenv("DCLI_PROJECT_DIR")
-	if projectDir != tmpDir {
-		t.Fatalf("expected DCLI_PROJECT_DIR to be %s, got %s", tmpDir, projectDir)
+	// Verify GetServices was called to get all services
+	if len(mockHelper.Calls.GetServices) == 0 {
+		t.Error("expected GetServices to be called when no services specified")
 	}
 }
 
-func TestDockerRestartDefaultProjectDir(t *testing.T) {
-	// Ensure DCLI_PROJECT_DIR is not set
-	oldProjectDir := os.Getenv("DCLI_PROJECT_DIR")
-	defer func() {
-		if oldProjectDir != "" {
-			os.Setenv("DCLI_PROJECT_DIR", oldProjectDir)
-		} else {
-			os.Unsetenv("DCLI_PROJECT_DIR")
-		}
-	}()
-
-	os.Unsetenv("DCLI_PROJECT_DIR")
-
-	// Verify that when DCLI_PROJECT_DIR is not set, it defaults to "."
-	projectDir := os.Getenv("DCLI_PROJECT_DIR")
-	if projectDir != "" {
-		t.Fatalf("expected DCLI_PROJECT_DIR to be unset, got %s", projectDir)
+func TestDockerRestartRunCommandCalled(t *testing.T) {
+	runCommandCalled := false
+	mockHelper := &MockDockerHelper{
+		GetServicesFn: func(projectDir string) ([]string, error) {
+			return []string{"web"}, nil
+		},
+		RunCommandFn: func(projectDir string, args ...string) error {
+			runCommandCalled = true
+			return nil
+		},
 	}
-	// The command should default to "." if DCLI_PROJECT_DIR is empty
+	setDockerHelper(mockHelper)
+	defer resetDockerHelper()
+
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+	dockerCmd.AddCommand(dockerRestartCmd)
+
+	rootCmd.SetArgs([]string{"docker", "restart", "web"})
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if !runCommandCalled {
+		t.Error("expected RunCommand to be called")
+	}
+}
+
+func TestDockerRestartPreservesVolumes(t *testing.T) {
+	mockHelper := &MockDockerHelper{
+		GetServicesFn: func(projectDir string) ([]string, error) {
+			return []string{"db"}, nil
+		},
+		RunCommandFn: func(projectDir string, args ...string) error {
+			// Verify that the command does NOT include "rm" which would remove volumes
+			// Restart uses "compose stop" and "compose up -d" which preserves volumes
+			if len(args) > 0 {
+				if args[0] == "compose" && len(args) > 1 {
+					if args[1] == "rm" {
+						t.Error("expected restart to not use 'rm' command (would delete volumes)")
+					}
+				}
+			}
+			return nil
+		},
+	}
+	setDockerHelper(mockHelper)
+	defer resetDockerHelper()
+
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+	dockerCmd.AddCommand(dockerRestartCmd)
+
+	rootCmd.SetArgs([]string{"docker", "restart", "db"})
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// Verify that stop and up commands were called (not rm/rebuild)
+	if len(mockHelper.Calls.RunCommand) != 2 {
+		t.Errorf("expected exactly 2 RunCommand calls (stop + up), got %d", len(mockHelper.Calls.RunCommand))
+	}
+
+	// Verify first call is stop
+	if len(mockHelper.Calls.RunCommand) > 0 {
+		firstCall := mockHelper.Calls.RunCommand[0]
+		if len(firstCall.Args) < 2 || firstCall.Args[1] != "stop" {
+			t.Error("expected first RunCommand call to be 'docker compose stop'")
+		}
+	}
+
+	// Verify second call is up
+	if len(mockHelper.Calls.RunCommand) > 1 {
+		secondCall := mockHelper.Calls.RunCommand[1]
+		if len(secondCall.Args) < 2 || secondCall.Args[1] != "up" {
+			t.Error("expected second RunCommand call to be 'docker compose up -d'")
+		}
+	}
 }
 
 func TestDockerRestartCommandMetadata(t *testing.T) {
@@ -107,30 +167,7 @@ func TestDockerRestartCommandMetadata(t *testing.T) {
 	}
 }
 
-func TestDockerRestartPreservesVolumes(t *testing.T) {
-	// Create temp directory with docker-compose.yml
-	tmpDir, err := os.MkdirTemp("", "test-docker-restart-*")
-	if err != nil {
-		t.Fatalf("failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	// Create docker-compose.yml with volumes
-	composeContent := `version: '3'
-services:
-  db:
-    image: postgres
-    volumes:
-      - db_data:/var/lib/postgresql/data
-volumes:
-  db_data:
-`
-	composeFile := filepath.Join(tmpDir, "docker-compose.yml")
-	if err := os.WriteFile(composeFile, []byte(composeContent), 0644); err != nil {
-		t.Fatalf("failed to write docker-compose.yml: %v", err)
-	}
-
-	// Set project directory
+func TestDockerRestartProjectDirFromEnv(t *testing.T) {
 	oldProjectDir := os.Getenv("DCLI_PROJECT_DIR")
 	defer func() {
 		if oldProjectDir != "" {
@@ -139,34 +176,112 @@ volumes:
 			os.Unsetenv("DCLI_PROJECT_DIR")
 		}
 	}()
-	os.Setenv("DCLI_PROJECT_DIR", tmpDir)
 
-	// Execute command
-	dockerRestartCmd.SetArgs([]string{"db"})
-	err = dockerRestartCmd.Execute()
-	// Note: Will fail if docker is not running, but that's expected
+	os.Setenv("DCLI_PROJECT_DIR", "/test/path")
+
+	mockHelper := &MockDockerHelper{
+		GetServicesFn: func(projectDir string) ([]string, error) {
+			if projectDir != "/test/path" {
+				t.Errorf("expected projectDir '/test/path', got %s", projectDir)
+			}
+			return []string{"web"}, nil
+		},
+		RunCommandFn: func(projectDir string, args ...string) error {
+			if projectDir != "/test/path" {
+				t.Errorf("expected projectDir '/test/path', got %s", projectDir)
+			}
+			return nil
+		},
+	}
+	setDockerHelper(mockHelper)
+	defer resetDockerHelper()
+
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+	dockerCmd.AddCommand(dockerRestartCmd)
+
+	rootCmd.SetArgs([]string{"docker", "restart", "web"})
+	err := rootCmd.Execute()
 	if err != nil {
-		t.Logf("command execution note: %v (docker may not be running)", err)
+		t.Fatalf("expected no error, got %v", err)
 	}
 }
 
-func TestDockerRestartCommandStructure(t *testing.T) {
-	// Verify the command has proper structure
-	if dockerRestartCmd.Name() != "restart" {
-		t.Errorf("expected command name 'restart', got %s", dockerRestartCmd.Name())
+func TestDockerRestartHelp(t *testing.T) {
+	mockHelper := &MockDockerHelper{
+		GetServicesFn: func(projectDir string) ([]string, error) {
+			return []string{"web"}, nil
+		},
+		RunCommandFn: func(projectDir string, args ...string) error {
+			return nil
+		},
 	}
+	setDockerHelper(mockHelper)
+	defer resetDockerHelper()
 
-	// Verify description mentions data preservation
-	if !contains(dockerRestartCmd.Long, "preserves") && !contains(dockerRestartCmd.Long, "data") {
-		t.Logf("Note: Long description doesn't mention data preservation")
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+	dockerCmd.AddCommand(dockerRestartCmd)
+
+	rootCmd.SetArgs([]string{"docker", "restart", "--help"})
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
 	}
 }
 
-func contains(s, substr string) bool {
-	for i := 0; i < len(s)-len(substr)+1; i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
+func TestDockerRestartMultipleServices(t *testing.T) {
+	mockHelper := &MockDockerHelper{
+		GetServicesFn: func(projectDir string) ([]string, error) {
+			return []string{"web", "db", "cache"}, nil
+		},
+		RunCommandFn: func(projectDir string, args ...string) error {
+			return nil
+		},
+	}
+	setDockerHelper(mockHelper)
+	defer resetDockerHelper()
+
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+
+	// Create a fresh copy of the restart command to avoid state pollution
+	localRestartCmd := &cobra.Command{
+		Use:   dockerRestartCmd.Use,
+		Short: dockerRestartCmd.Short,
+		Long:  dockerRestartCmd.Long,
+		RunE:  dockerRestartCmd.RunE,
+	}
+	dockerCmd.AddCommand(localRestartCmd)
+
+	rootCmd.SetArgs([]string{"docker", "restart", "web", "db", "cache"})
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// Verify that all services are included in the command calls
+	if len(mockHelper.Calls.RunCommand) < 2 {
+		t.Errorf("expected at least 2 RunCommand calls, got %d", len(mockHelper.Calls.RunCommand))
+	}
+
+	// Verify services are passed to RunCommand
+	foundServices := false
+	for _, call := range mockHelper.Calls.RunCommand {
+		if len(call.Args) >= 3 {
+			// Check if services are in the arguments
+			for _, arg := range call.Args {
+				if arg == "web" || arg == "db" || arg == "cache" {
+					foundServices = true
+					break
+				}
+			}
 		}
 	}
-	return false
+	if !foundServices {
+		t.Error("expected services to be passed to RunCommand")
+	}
 }
