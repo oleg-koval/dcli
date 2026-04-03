@@ -1,0 +1,100 @@
+version: 1
+project_name: dcli
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: dcli
+    main: ./main.go
+    binary: dcli
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/oleg-koval/dcli/cmd.Version={{.Version}}
+
+archives:
+  - id: dcli
+    builds:
+      - dcli
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: '{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}'
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+release:
+  name_template: 'Release {{.Version}}'
+  draft: false
+  footer: |
+    ## Installation
+
+    ### Homebrew
+    ```bash
+    brew tap oleg-koval/dcli
+    brew install dcli
+    ```
+
+    ### Direct Download
+    Download the binary for your platform above.
+
+    ### From Source
+    ```bash
+    git clone https://github.com/oleg-koval/dcli.git
+    cd dcli
+    make build
+    ./bin/dcli --version
+    ```
+
+brews:
+  - name: dcli
+    tap:
+      owner: oleg-koval
+      name: homebrew-dcli
+      branch: main
+    commit_author:
+      name: dcli-bot
+      email: bot@dcli.dev
+    commit_msg_template: 'chore(release): update dcli formula to {{ .Version }}'
+    homepage: https://github.com/oleg-koval/dcli
+    description: Lightweight Docker Compose and Git management CLI
+    license: MIT
+    folder: Formula
+    install: |
+      bin.install "dcli"
+    test: |
+      system "#{bin}/dcli --version"
+    dependencies:
+      - name: docker
+        type: optional
+      - name: git
+        type: optional
+
+changelog:
+  skip: false
+  use: git
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore'
+      - 'merge pull request'
+      - 'Merge pull request'
+      - 'Merge branch'
