@@ -1,6 +1,6 @@
 module github.com/oleg-koval/dcli
 
-go 1.25.0
+go 1.21
 
 require (
 	github.com/spf13/cobra v1.10.2
