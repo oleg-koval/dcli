@@ -5,6 +5,10 @@
   <a href="https://securityscorecards.dev/viewer/?uri=github.com/oleg-koval/dcli"><img src="https://api.securityscorecards.dev/projects/github.com/oleg-koval/dcli/badge" alt="OpenSSF Scorecard"></a>
 </p>
 
+<p align="center">
+  <img src="./icon.svg" width="120" height="120" alt="dcli icon">
+</p>
+
 <h1 align="center">dcli</h1>
 
 <p align="center">
@@ -22,7 +26,7 @@
 - 🖥️ **Cross-Platform** - Works on macOS (Intel & Apple Silicon), Linux, and Windows
 - ⚙️ **YAML Configuration** - Simple config file at `~/.dcli/config.yaml`
 - 📝 **Clear Error Messages** - Comprehensive feedback on what went wrong and why
-- 🧪 **Well-Tested** - 15+ passing tests across all platforms
+- 🧪 **Well-Tested** - 58 tests with 82.4% code coverage across all platforms
 
 ## Installation
 
