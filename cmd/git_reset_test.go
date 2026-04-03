@@ -811,6 +811,6 @@ func TestGitResetFetchOriginError(t *testing.T) {
 	}
 
 	if err != nil && err.Error() != "some repositories failed to reset" {
-		t.Logf("got expected error: %v", err)
+		t.Fatalf("expected 'some repositories failed to reset', got %v", err)
 	}
 }
