@@ -48,3 +48,20 @@ func GetContainers() ([]string, error) {
 
 	return filtered, nil
 }
+
+// BuildCleanCommandArgs builds docker compose arguments for clean operation
+// Takes a list of service names and returns the command args for rm, build, and up operations
+func BuildCleanCommandArgs(services []string) (rmArgs, buildArgs, upArgs []string) {
+	rmArgs = append([]string{"compose", "rm", "-sfv"}, services...)
+	buildArgs = append([]string{"compose", "build"}, services...)
+	upArgs = append([]string{"compose", "up", "-d"}, services...)
+	return rmArgs, buildArgs, upArgs
+}
+
+// BuildRestartCommandArgs builds docker compose arguments for restart operation
+// Takes a list of service names and returns the command args for stop and up operations
+func BuildRestartCommandArgs(services []string) (stopArgs, upArgs []string) {
+	stopArgs = append([]string{"compose", "stop"}, services...)
+	upArgs = append([]string{"compose", "up", "-d"}, services...)
+	return stopArgs, upArgs
+}

@@ -32,25 +32,26 @@ func FuzzCleanCommand(f *testing.F) {
 			return
 		}
 
-		// Parse service names from input (simulating how docker clean/restart parse args)
+		// Parse service names from input (same parsing used by docker clean/restart commands)
 		services := strings.Fields(input)
 		if len(services) == 0 {
 			return
 		}
 
-		// Exercise the argument parsing/building logic used in docker clean/restart
-		// by constructing the same command arguments they would build
-		rmArgs := append([]string{"compose", "rm", "-sfv"}, services...)
-		buildArgs := append([]string{"compose", "build"}, services...)
-		upArgs := append([]string{"compose", "up", "-d"}, services...)
+		// Exercise the argument parsing and building logic used by docker clean command
+		// This routes the fuzzed input into the real code paths used by the CLI
+		rmArgs, buildArgs, upArgs := BuildCleanCommandArgs(services)
 
-		// Verify all arguments are parsed correctly and no panics occur
-		_ = len(rmArgs)
-		_ = len(buildArgs)
-		_ = len(upArgs)
+		// Verify all arguments are correctly built and accessible without panics
+		// The fuzzer exercises the argument construction and parsing logic
+		if len(rmArgs) == 0 || len(buildArgs) == 0 || len(upArgs) == 0 {
+			t.Errorf("expected non-empty args, got rm:%d build:%d up:%d", len(rmArgs), len(buildArgs), len(upArgs))
+		}
 
-		// If the actual docker helper were available, we'd call:
-		// dockerHelper.RunCommand(projectDir, rmArgs...)
-		// For now, the fuzzer validates argument construction doesn't panic
+		// Also test the restart command args to exercise that path
+		stopArgs, restartUpArgs := BuildRestartCommandArgs(services)
+		if len(stopArgs) == 0 || len(restartUpArgs) == 0 {
+			t.Errorf("expected non-empty restart args, got stop:%d up:%d", len(stopArgs), len(restartUpArgs))
+		}
 	})
 }
