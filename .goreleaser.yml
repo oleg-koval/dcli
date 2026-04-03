@@ -42,7 +42,6 @@ checksum:
 release:
   name_template: 'Release {{.Version}}'
   draft: false
-  prerelease_suffix: ''
   footer: |
     ## Installation
 
