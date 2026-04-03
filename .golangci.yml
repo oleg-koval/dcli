@@ -3,7 +3,7 @@
 
 run:
   timeout: 5m
-  go: "1.21"
+  go: "1.23"
 
 linters:
   # Enable security, error handling, and quality checks

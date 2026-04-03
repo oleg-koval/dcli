@@ -68,7 +68,7 @@ var gitResetCmd = &cobra.Command{
 			}
 
 			fmt.Printf("  🔄 Resetting to origin/%s...\n", branch)
-			if err := gitHelper.ResetHard(repo.Path, branch); err != nil {
+			if err := gitHelper.ResetHard(repo.Path, "origin/"+branch); err != nil {
 				fmt.Printf("  ❌ Failed to reset to origin/%s: %v\n", branch, err)
 				fmt.Println("")
 				hasFailures = true

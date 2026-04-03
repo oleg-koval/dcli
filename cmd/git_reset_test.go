@@ -381,7 +381,7 @@ func TestGitResetHardReset(t *testing.T) {
 	}()
 	os.Setenv("HOME", tmpHome)
 
-	resetHardCalled := false
+	var resetTarget string
 	mockHelper := &MockGitHelper{
 		IsGitRepoFn: func(path string) bool {
 			return true
@@ -393,7 +393,8 @@ func TestGitResetHardReset(t *testing.T) {
 			return nil
 		},
 		ResetHardFn: func(path, branch string) error {
-			resetHardCalled = true
+			// Capture the branch argument passed to ResetHard
+			resetTarget = branch
 			return nil
 		},
 	}
@@ -411,8 +412,10 @@ func TestGitResetHardReset(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if !resetHardCalled {
-		t.Error("expected ResetHard to be called")
+	// Verify ResetHard was called with the remote ref (origin/develop)
+	expectedRef := "origin/develop"
+	if resetTarget != expectedRef {
+		t.Errorf("expected ResetHard to be called with remote ref %q, got %q", expectedRef, resetTarget)
 	}
 }
 
