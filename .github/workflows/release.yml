@@ -57,5 +57,5 @@ jobs:
           args: release --clean
 >>>>>>> main
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ steps.version.outputs.version }}
