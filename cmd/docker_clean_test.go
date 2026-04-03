@@ -13,6 +13,10 @@ func TestDockerCleanWithValidServices(t *testing.T) {
 			return []string{"web", "db"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
+			// Verify projectDir is passed correctly
+			if projectDir == "" {
+				t.Error("expected non-empty projectDir")
+			}
 			return nil
 		},
 	}
@@ -42,6 +46,10 @@ func TestDockerCleanWithNoServices(t *testing.T) {
 			return []string{"web", "db", "cache"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
+			// Verify projectDir is passed correctly when GetServices retrieves all services
+			if projectDir == "" {
+				t.Error("expected non-empty projectDir")
+			}
 			return nil
 		},
 	}
@@ -73,6 +81,10 @@ func TestDockerCleanRunCommandCalled(t *testing.T) {
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
 			runCommandCalled = true
+			// Verify projectDir is passed correctly
+			if projectDir == "" {
+				t.Error("expected non-empty projectDir")
+			}
 			return nil
 		},
 	}
@@ -133,6 +145,10 @@ func TestDockerCleanProjectDirFromEnv(t *testing.T) {
 			return []string{"web"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
+			// Verify projectDir is correctly passed from DCLI_PROJECT_DIR env var
+			if projectDir != "/test/path" {
+				t.Errorf("RunCommand: expected projectDir '/test/path', got %s", projectDir)
+			}
 			return nil
 		},
 	}

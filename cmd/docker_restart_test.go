@@ -13,6 +13,10 @@ func TestDockerRestartWithValidServices(t *testing.T) {
 			return []string{"web", "db"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
+			// Verify projectDir is passed correctly
+			if projectDir == "" {
+				t.Error("expected non-empty projectDir")
+			}
 			return nil
 		},
 	}
@@ -42,6 +46,10 @@ func TestDockerRestartWithNoServices(t *testing.T) {
 			return []string{"web", "db", "cache"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
+			// Verify projectDir is passed correctly when GetServices retrieves all services
+			if projectDir == "" {
+				t.Error("expected non-empty projectDir")
+			}
 			return nil
 		},
 	}
@@ -73,6 +81,10 @@ func TestDockerRestartRunCommandCalled(t *testing.T) {
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
 			runCommandCalled = true
+			// Verify projectDir is passed correctly
+			if projectDir == "" {
+				t.Error("expected non-empty projectDir")
+			}
 			return nil
 		},
 	}
@@ -101,6 +113,10 @@ func TestDockerRestartPreservesVolumes(t *testing.T) {
 			return []string{"db"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
+			// Verify projectDir is passed correctly
+			if projectDir == "" {
+				t.Error("expected non-empty projectDir")
+			}
 			// Verify that the command does NOT include "rm" which would remove volumes
 			// Restart uses "compose stop" and "compose up -d" which preserves volumes
 			if len(args) > 0 {
@@ -238,6 +254,10 @@ func TestDockerRestartMultipleServices(t *testing.T) {
 			return []string{"web", "db", "cache"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
+			// Verify projectDir is passed correctly for multiple services
+			if projectDir == "" {
+				t.Error("expected non-empty projectDir")
+			}
 			return nil
 		},
 	}
@@ -268,20 +288,18 @@ func TestDockerRestartMultipleServices(t *testing.T) {
 		t.Errorf("expected at least 2 RunCommand calls, got %d", len(mockHelper.Calls.RunCommand))
 	}
 
-	// Verify services are passed to RunCommand
-	foundServices := false
+	// Verify all expected services are passed to RunCommand
+	expectedServices := map[string]bool{"web": false, "db": false, "cache": false}
 	for _, call := range mockHelper.Calls.RunCommand {
-		if len(call.Args) >= 3 {
-			// Check if services are in the arguments
-			for _, arg := range call.Args {
-				if arg == "web" || arg == "db" || arg == "cache" {
-					foundServices = true
-					break
-				}
+		for _, arg := range call.Args {
+			if _, exists := expectedServices[arg]; exists {
+				expectedServices[arg] = true
 			}
 		}
 	}
-	if !foundServices {
-		t.Error("expected services to be passed to RunCommand")
+	for service, found := range expectedServices {
+		if !found {
+			t.Errorf("expected service %q to be passed to RunCommand", service)
+		}
 	}
 }
