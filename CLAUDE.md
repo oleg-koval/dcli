@@ -84,7 +84,7 @@ dcli/
 ### Testing Notes
 
 - Tests use standard Go testing package
-- Test coverage is tracked (currently 82.4%)
+- Test coverage is tracked (currently 76%+, with core packages at 90%+)
 - Use `-run` flag to run specific tests: `go test -v -run TestDockerClean ./...`
 - CI runs against Go 1.21 and 1.22
 
@@ -133,13 +133,13 @@ GitHub Actions workflow (`.github/workflows/test.yml`):
 
 ## Testing Coverage
 
-58 tests across:
+59 tests across:
 - `cmd/` - Command behavior and integration
 - `internal/config/` - Configuration parsing
 - `internal/docker/` - Docker Compose operations
 - `internal/git/` - Git repository operations
 
-Goal: Maintain 82%+ coverage
+Goal: Maintain 85%+ overall coverage (core packages at 90%+)
 
 ## Security & Quality Infrastructure
 
@@ -168,7 +168,7 @@ Goal: Maintain 82%+ coverage
 
 ### Supply Chain Security
 - **OpenSSF Scorecard:** Runs weekly to assess security posture
-- **GitHub CodeQL:** Integrated for vulnerability scanning (via scorecard)
+- **GitHub CodeQL:** Integrated for vulnerability scanning (via a dedicated GitHub CodeQL workflow in CI)
 - **Dependency Verification:** `go mod verify` ensures integrity in CI
 
 ## For Future Development
