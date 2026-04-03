@@ -51,7 +51,11 @@ jobs:
         uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
+<<<<<<< feature/automated-releases
           args: release --clean -v
+=======
+          args: release --clean
+>>>>>>> main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ steps.version.outputs.version }}
