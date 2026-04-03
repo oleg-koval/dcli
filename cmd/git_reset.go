@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/oleg-koval/dcli/internal/config"
+	"github.com/oleg-koval/dcli/internal/git"
 	"github.com/spf13/cobra"
 )
 
@@ -15,8 +16,8 @@ var gitResetCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		branch := args[0]
-		if branch != "develop" && branch != "acceptance" {
-			return fmt.Errorf("branch must be 'develop' or 'acceptance', got '%s'", branch)
+		if err := git.ValidateBranchTarget(branch); err != nil {
+			return err
 		}
 
 		cfg, err := config.Load()

@@ -25,12 +25,14 @@ func FuzzGitReset(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, input string) {
-		// This fuzzer ensures git branch parsing can handle arbitrary input
-		// without panicking or crashing
+		// This fuzzer exercises the branch validation logic with arbitrary input
+		// ensuring no panics and proper error handling of invalid branch names
 		if input == "" {
 			return
 		}
-		// In a real implementation, you would validate and process the branch name
-		// The fuzzer helps find edge cases and potential crashes
+		err := ValidateBranchTarget(input)
+		// err can be nil (for valid branches) or non-nil (for invalid branches)
+		// The fuzzer verifies the function handles any input without panicking
+		_ = err
 	})
 }
