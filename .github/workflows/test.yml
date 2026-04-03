@@ -27,5 +27,5 @@ jobs:
         uses: coverallsapp/github-action@v2
         with:
           files: coverage.out
-          fail: false
+          fail-on-error: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
