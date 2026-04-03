@@ -192,7 +192,7 @@ func TestLoadConfigEmptyFile(t *testing.T) {
 	}
 
 	// Empty YAML results in nil repositories, which is valid
-	if cfg.Repositories != nil && len(cfg.Repositories) > 0 {
+	if len(cfg.Repositories) > 0 {
 		t.Errorf("expected empty or nil repositories, got %d", len(cfg.Repositories))
 	}
 }
@@ -388,7 +388,7 @@ func TestConfigEmpty(t *testing.T) {
 func TestConfigNilRepositories(t *testing.T) {
 	cfg := &Config{}
 
-	if cfg.Repositories != nil && len(cfg.Repositories) > 0 {
+	if len(cfg.Repositories) > 0 {
 		t.Errorf("expected nil or empty repositories, got %v", cfg.Repositories)
 	}
 }

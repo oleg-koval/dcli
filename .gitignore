@@ -39,3 +39,15 @@ skills/
 .trae/
 .windsurf/
 .zencoder/
+
+# Test and coverage artifacts
+TESTING_README.md
+TEST_ANALYSIS_SUMMARY.md
+TEST_COVERAGE_PLAN.md
+TEST_SPECIFICATIONS.md
+IMPROVEMENTS.md
+coverage.out
+*-coverage.out
+*-coverage.html
+cmd-coverage.out
+cmd-coverage.html

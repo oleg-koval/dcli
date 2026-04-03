@@ -1,0 +1,23 @@
+run:
+  timeout: 5m
+  go: "1.21"
+
+linters:
+  enable:
+    - gosec          # Security issues
+    - errcheck       # Error checking
+    - staticcheck    # Static analysis
+    - gosimple       # Code simplification
+    - typecheck      # Type checking
+    - ineffassign    # Ineffectual assignments
+
+linters-settings:
+  gosec:
+    severity: "medium"
+    confidence: "medium"
+
+issues:
+  exclude-rules:
+    - path: "_test.go$"
+      linters:
+        - gosec
