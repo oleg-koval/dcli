@@ -10,6 +10,9 @@ linters:
     - errcheck
     - staticcheck
     - ineffassign
+    - typecheck
+    - exhaustive
+    - gosimple
     - exhaustive
 
   settings:
