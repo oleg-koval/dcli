@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="dcli is a lightweight Docker Compose and Git management CLI with clean commands, fast workflows, and cross-platform support.">
+  <meta name="theme-color" content="#141413">
+  <title>dcli | Docker and Git workflows, streamlined</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <div class="page-frame">
+    <div class="ambient ambient-a" aria-hidden="true"></div>
+    <div class="ambient ambient-b" aria-hidden="true"></div>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="dcli home">
+        <img src="icon.svg" alt="" class="brand-mark">
+        <span>dcli</span>
+      </a>
+      <nav class="topnav" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/oleg-koval/dcli" target="_blank" rel="noreferrer noopener">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="top" class="layout">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Docker Compose and Git management CLI</p>
+          <h1>Clean container and repository workflows without the ceremony.</h1>
+          <p class="lede">
+            dcli wraps the repetitive parts of local ops into a small, predictable command set.
+            Reset repos, clean services, and move between branches with fewer keystrokes and less context switching.
+          </p>
+
+          <div class="actions">
+            <a class="button button-primary" href="#install">Install dcli</a>
+            <a class="button button-secondary" href="https://github.com/oleg-koval/dcli" target="_blank" rel="noreferrer noopener">View source</a>
+          </div>
+
+          <dl class="stats" aria-label="Project highlights">
+            <div>
+              <dt>Cross-platform</dt>
+              <dd>macOS, Linux, Windows</dd>
+            </div>
+            <div>
+              <dt>Primary commands</dt>
+              <dd>Docker clean, Docker restart, Git reset</dd>
+            </div>
+            <div>
+              <dt>Distribution</dt>
+              <dd>Homebrew and direct binaries</dd>
+            </div>
+          </dl>
+        </div>
+
+        <aside class="terminal-card" aria-label="Command preview">
+          <div class="terminal-bar">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="terminal-body">
+            <p class="terminal-label">Typical session</p>
+            <pre><code>$ dcli docker clean api web
+removes containers, volumes, rebuilds, and restarts selected services
+
+$ dcli git reset develop
+fetches origin and resets configured repos to the target branch
+
+$ dcli docker restart
+restarts services while preserving data volumes</code></pre>
+          </div>
+        </aside>
+      </section>
+
+      <section id="features" class="section section-surface">
+        <div class="section-heading">
+          <p class="eyebrow">Why it exists</p>
+          <h2>Small surface area, practical payoff.</h2>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature feature-large">
+            <span class="feature-tag feature-tag-warm">Docker ops</span>
+            <h3>Reset noisy environments in one command.</h3>
+            <p>
+              Clean containers, remove stale volumes, rebuild, and bring services back up with a single explicit action.
+            </p>
+          </article>
+
+          <article class="feature">
+            <span class="feature-tag">Git orchestration</span>
+            <h3>Update several repos without opening each one.</h3>
+            <p>
+              Point dcli at your configured repositories and synchronize them to the branch you actually need.
+            </p>
+          </article>
+
+          <article class="feature">
+            <span class="feature-tag feature-tag-blue">Fast feedback</span>
+            <h3>Clear output for humans who are in a hurry.</h3>
+            <p>
+              The CLI tells you what it changed, what failed, and which repository or container caused the problem.
+            </p>
+          </article>
+
+          <article class="feature">
+            <span class="feature-tag feature-tag-green">Portable</span>
+            <h3>Works wherever your shell and Docker do.</h3>
+            <p>
+              The release artifacts cover macOS, Linux, and Windows, with a Homebrew path for the fastest install.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="workflow" class="section">
+        <div class="section-heading">
+          <p class="eyebrow">Workflow</p>
+          <h2>From local chaos to a known-good state.</h2>
+        </div>
+
+        <div class="workflow-grid">
+          <article class="workflow-step">
+            <span>01</span>
+            <h3>Read the intent</h3>
+            <p>Choose the command that matches the task: clean, restart, or reset.</p>
+          </article>
+          <article class="workflow-step">
+            <span>02</span>
+            <h3>Run the operation</h3>
+            <p>dcli applies the steps directly instead of forcing you through nested shell scripts.</p>
+          </article>
+          <article class="workflow-step">
+            <span>03</span>
+            <h3>Get a useful result</h3>
+            <p>The output is meant to be actionable, not decorative.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="install" class="section section-install">
+        <div class="install-copy">
+          <p class="eyebrow">Install</p>
+          <h2>Use the package manager or grab a release binary.</h2>
+          <p>
+            The repo ships with Homebrew support and direct downloads for the main desktop platforms.
+          </p>
+        </div>
+
+        <div class="install-panel">
+          <div class="install-block">
+            <p>Homebrew</p>
+            <pre><code>brew tap oleg-koval/dcli
+brew install dcli
+dcli --version</code></pre>
+          </div>
+          <div class="install-block">
+            <p>Source build</p>
+            <pre><code>git clone https://github.com/oleg-koval/dcli.git
+cd dcli
+make build
+./bin/dcli --version</code></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Built for the
+        <a href="https://github.com/oleg-koval/dcli" target="_blank" rel="noreferrer noopener">dcli repository</a>.
+        Explore the
+        <a href="https://github.com/oleg-koval/dcli/blob/main/README.md" target="_blank" rel="noreferrer noopener">README</a>
+        and
+        <a href="https://github.com/oleg-koval/dcli/tree/main/docs" target="_blank" rel="noreferrer noopener">docs</a>.
+      </p>
+    </footer>
+  </div>
+</body>
+</html>
