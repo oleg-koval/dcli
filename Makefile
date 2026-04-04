@@ -30,7 +30,7 @@ test:
 	go test -v -cover ./...
 
 lint:
-	go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 run
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.8.0 run
 
 fuzz:
 	go test -fuzz=FuzzCleanCommand ./internal/docker -fuzztime=10s

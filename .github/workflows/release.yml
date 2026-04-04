@@ -26,7 +26,7 @@ jobs:
       - name: Run linter
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v1.64.8
+          version: v2.8.0
 
   release:
     needs: test-gate

@@ -13,10 +13,14 @@ To update:
 brew upgrade dcli
 ```
 
+`dcli` also checks GitHub Releases on launch and updates itself when a newer version is available.
+Set `DCLI_DISABLE_AUTO_UPDATE=1` to skip that check.
+Set `DCLI_AUTO_UPDATE_TIMEOUT` to tune how long that best-effort check can wait before giving up.
+
 ## From Source
 
 ### Prerequisites
-- Go 1.21+
+- Go 1.25.0+
 - Git
 
 ### Steps

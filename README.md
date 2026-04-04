@@ -21,8 +21,9 @@
 ## Features
 
 - 🐳 **Docker Management** - Clean containers/volumes, rebuild, and restart services
-- 🔄 **Git Batch Operations** - Reset multiple repositories to develop or acceptance branches
+- 🔄 **Git Batch Operations** - Reset multiple repositories to any branch on origin
 - 🚀 **Homebrew Distribution** - Install with a single command: `brew install dcli`
+- 🔄 **Auto-Updates** - Checks GitHub Releases on launch and self-updates when a newer version is available
 - 🖥️ **Cross-Platform** - Works on macOS (Intel & Apple Silicon), Linux, and Windows
 - ⚙️ **YAML Configuration** - Simple config file at `~/.dcli/config.yaml`
 - 📝 **Clear Error Messages** - Comprehensive feedback on what went wrong and why
@@ -51,6 +52,9 @@ make build
 
 Download binaries for your platform from [GitHub Releases](https://github.com/oleg-koval/dcli/releases/tag/v0.1.0)
 
+Set `DCLI_DISABLE_AUTO_UPDATE=1` if you want to skip the startup update check.
+Set `DCLI_AUTO_UPDATE_TIMEOUT=250ms` to adjust the best-effort update check timeout (default: `1s`).
+
 ## Quick Start
 
 ### Docker Commands
@@ -75,8 +79,8 @@ dcli docker restart api
 # Reset all configured repos to develop
 dcli git reset develop
 
-# Reset all configured repos to acceptance
-dcli git reset acceptance
+# Reset all configured repos to develop
+dcli git reset develop
 ```
 
 ## Configuration
@@ -96,6 +100,7 @@ repositories:
 ### Environment Variables
 
 - `DCLI_PROJECT_DIR` - Override default project directory (defaults to current directory)
+- `DCLI_AUTO_UPDATE_TIMEOUT` - Override the startup update check timeout using a Go duration string, such as `250ms` or `1s`
 
 Example:
 ```bash
@@ -159,14 +164,14 @@ dcli docker restart web api  # Restart specific services
 Configure all microservices and reset with one command:
 ```bash
 # In ~/.dcli/config.yaml: add all repo paths
-dcli git reset acceptance   # All services to acceptance branch
+dcli git reset acceptance    # All services to acceptance branch
 dcli docker clean           # Clean all microservices
 ```
 
 ## Architecture
 
 dcli is built with:
-- **Go 1.21+** - Compiled language for reliability
+- **Go 1.25.0+** - Compiled language for reliability
 - **Cobra** - Battle-tested CLI framework
 - **YAML** - Human-readable configuration
 - **Docker Compose API** - Direct execution without shells

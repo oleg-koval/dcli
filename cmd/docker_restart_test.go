@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"os"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -184,16 +183,7 @@ func TestDockerRestartCommandMetadata(t *testing.T) {
 }
 
 func TestDockerRestartProjectDirFromEnv(t *testing.T) {
-	oldProjectDir := os.Getenv("DCLI_PROJECT_DIR")
-	defer func() {
-		if oldProjectDir != "" {
-			os.Setenv("DCLI_PROJECT_DIR", oldProjectDir)
-		} else {
-			os.Unsetenv("DCLI_PROJECT_DIR")
-		}
-	}()
-
-	os.Setenv("DCLI_PROJECT_DIR", "/test/path")
+	setEnvForTest(t, "DCLI_PROJECT_DIR", "/test/path")
 
 	mockHelper := &MockDockerHelper{
 		GetServicesFn: func(projectDir string) ([]string, error) {

@@ -7,6 +7,5 @@ package tools
 // See https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module
 
 import (
-	_ "github.com/golangci/golangci-lint/cmd/golangci-lint" // v1.64.8
+	_ "github.com/golangci/golangci-lint/v2/cmd/golangci-lint" // v2.8.0
 )
-
