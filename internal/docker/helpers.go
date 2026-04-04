@@ -8,7 +8,7 @@ import (
 
 // GetServices retrieves a list of services from docker-compose config
 func GetServices(projectDir string) ([]string, error) {
-	cmd := exec.Command("docker", "compose", "config", "--services")
+	cmd := exec.Command("docker", "compose", "config", "--services") // #nosec G204 -- fixed command, no shell interpolation
 	cmd.Dir = projectDir
 	output, err := cmd.Output()
 	if err != nil {
@@ -21,7 +21,7 @@ func GetServices(projectDir string) ([]string, error) {
 
 // RunCommand executes a Docker command with the given arguments in the specified project directory
 func RunCommand(projectDir string, args ...string) error {
-	cmd := exec.Command("docker", args...)
+	cmd := exec.Command("docker", args...) // #nosec G204 -- args are passed directly to docker without shell expansion
 	cmd.Dir = projectDir
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("docker command failed: %w", err)
@@ -31,7 +31,7 @@ func RunCommand(projectDir string, args ...string) error {
 
 // GetContainers retrieves a list of running Docker containers
 func GetContainers() ([]string, error) {
-	cmd := exec.Command("docker", "ps", "--format", "{{.Names}}")
+	cmd := exec.Command("docker", "ps", "--format", "{{.Names}}") // #nosec G204 -- fixed command, no shell interpolation
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list Docker containers: %w", err)

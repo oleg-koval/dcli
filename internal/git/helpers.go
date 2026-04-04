@@ -17,7 +17,7 @@ func IsGitRepo(path string) bool {
 
 // FetchOrigin fetches updates from the remote origin
 func FetchOrigin(path string) error {
-	cmd := exec.Command("git", "-C", path, "fetch", "origin")
+	cmd := exec.Command("git", "-C", path, "fetch", "origin") // #nosec G204 -- fixed command, no shell interpolation
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to fetch from origin: %w", err)
 	}
@@ -26,7 +26,7 @@ func FetchOrigin(path string) error {
 
 // CheckoutBranch checks out a branch in the repository
 func CheckoutBranch(path string, branch string) error {
-	cmd := exec.Command("git", "-C", path, "checkout", branch)
+	cmd := exec.Command("git", "-C", path, "checkout", branch) // #nosec G204 -- branch is passed directly to git without shell expansion
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to checkout branch %s: %w", branch, err)
 	}
@@ -35,7 +35,7 @@ func CheckoutBranch(path string, branch string) error {
 
 // ResetHard performs a hard reset to the specified commit/branch
 func ResetHard(path string, target string) error {
-	cmd := exec.Command("git", "-C", path, "reset", "--hard", target)
+	cmd := exec.Command("git", "-C", path, "reset", "--hard", target) // #nosec G204 -- target is passed directly to git without shell expansion
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to reset hard to %s: %w", target, err)
 	}
@@ -44,7 +44,7 @@ func ResetHard(path string, target string) error {
 
 // GetCurrentBranch returns the current branch name
 func GetCurrentBranch(path string) (string, error) {
-	cmd := exec.Command("git", "-C", path, "rev-parse", "--abbrev-ref", "HEAD")
+	cmd := exec.Command("git", "-C", path, "rev-parse", "--abbrev-ref", "HEAD") // #nosec G204 -- fixed command, no shell interpolation
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get current branch: %w", err)
@@ -54,7 +54,7 @@ func GetCurrentBranch(path string) (string, error) {
 
 // GetRemoteURL returns the URL of the remote origin
 func GetRemoteURL(path string) (string, error) {
-	cmd := exec.Command("git", "-C", path, "config", "--get", "remote.origin.url")
+	cmd := exec.Command("git", "-C", path, "config", "--get", "remote.origin.url") // #nosec G204 -- fixed command, no shell interpolation
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get remote URL: %w", err)
