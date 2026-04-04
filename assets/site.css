@@ -1,0 +1,561 @@
+:root {
+  color-scheme: dark;
+  --bg: #141413;
+  --bg-elevated: #1c1b18;
+  --surface: #1f1e1a;
+  --card: #faf9f5;
+  --card-soft: #ece9df;
+  --card-dim: #e8e6dc;
+  --text: #faf9f5;
+  --text-strong: #141413;
+  --muted: #b0aea5;
+  --accent: #d97757;
+  --accent-strong: #c65f3d;
+  --blue: #6a9bcc;
+  --green: #788c5d;
+  --border: rgba(250, 249, 245, 0.12);
+  --shadow: 0 28px 80px rgba(0, 0, 0, 0.38);
+  --radius-xl: 32px;
+  --radius-lg: 24px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+  --page-width: min(1160px, calc(100vw - 2rem));
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(217, 119, 87, 0.15), transparent 28%),
+    radial-gradient(circle at 80% 10%, rgba(106, 155, 204, 0.16), transparent 30%),
+    linear-gradient(180deg, #171613 0%, #11110f 100%);
+  color: var(--text);
+  font-family: "Lora", Georgia, serif;
+  line-height: 1.6;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 36px, 36px 100%;
+  mask-image: radial-gradient(circle at center, black 45%, transparent 95%);
+  opacity: 0.35;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--card);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+code,
+pre {
+  font-family: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+}
+
+.page-frame {
+  position: relative;
+  width: var(--page-width);
+  margin: 0 auto;
+  padding: 24px 0 40px;
+}
+
+.ambient {
+  position: absolute;
+  z-index: -1;
+  border-radius: 999px;
+  filter: blur(18px);
+  opacity: 0.65;
+}
+
+.ambient-a {
+  width: 280px;
+  height: 280px;
+  top: 120px;
+  left: -110px;
+  background: rgba(217, 119, 87, 0.22);
+}
+
+.ambient-b {
+  width: 220px;
+  height: 220px;
+  right: -80px;
+  top: 480px;
+  background: rgba(106, 155, 204, 0.18);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 8px 0 28px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-family: "Poppins", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: rgba(250, 249, 245, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.topnav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 1rem;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.layout {
+  display: grid;
+  gap: 24px;
+}
+
+.hero,
+.section,
+.section-install {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: rgba(31, 30, 26, 0.78);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.95fr);
+  gap: 26px;
+  padding: 30px;
+}
+
+.hero-copy {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  padding: 12px 0;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: "Poppins", Arial, sans-serif;
+  line-height: 1.02;
+  color: var(--text);
+}
+
+h1 {
+  max-width: 10.5ch;
+  font-size: clamp(3.2rem, 6vw, 6.3rem);
+  letter-spacing: -0.05em;
+}
+
+h2 {
+  font-size: clamp(2rem, 3vw, 3rem);
+  letter-spacing: -0.04em;
+}
+
+h3 {
+  font-size: 1.18rem;
+  letter-spacing: -0.03em;
+}
+
+.lede,
+.section p,
+.install-copy p {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.02rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  padding-top: 0.55rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 0.9rem 1.3rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-family: "Poppins", Arial, sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button-primary {
+  color: var(--text-strong);
+  background: linear-gradient(135deg, #f4ede1 0%, #f9f5ea 100%);
+}
+
+.button-secondary {
+  border-color: var(--border);
+  background: rgba(250, 249, 245, 0.03);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin: 0.4rem 0 0;
+}
+
+.stats div,
+.feature,
+.workflow-step,
+.install-block {
+  border: 1px solid rgba(250, 249, 245, 0.1);
+  border-radius: var(--radius-md);
+  background: rgba(250, 249, 245, 0.03);
+}
+
+.stats div {
+  padding: 1rem 1rem 1.1rem;
+}
+
+.stats dt {
+  margin-bottom: 0.35rem;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--card-dim);
+}
+
+.stats dd {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.terminal-card {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(250, 249, 245, 0.12);
+  background:
+    linear-gradient(180deg, rgba(250, 249, 245, 0.04), rgba(250, 249, 245, 0.02)),
+    #191814;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.terminal-bar {
+  display: flex;
+  gap: 0.45rem;
+  padding: 1rem 1rem 0.8rem;
+}
+
+.terminal-bar span {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 50%;
+  background: rgba(250, 249, 245, 0.18);
+}
+
+.terminal-bar span:first-child {
+  background: var(--accent);
+}
+
+.terminal-bar span:nth-child(2) {
+  background: var(--blue);
+}
+
+.terminal-bar span:nth-child(3) {
+  background: var(--green);
+}
+
+.terminal-body {
+  padding: 0 1.1rem 1.1rem;
+}
+
+.terminal-label {
+  margin: 0 0 0.7rem;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+pre {
+  overflow: auto;
+  margin: 0;
+  padding: 1rem 1.05rem;
+  border-radius: 16px;
+  background: rgba(12, 12, 11, 0.66);
+  color: #f8f3e8;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.section {
+  padding: 28px 30px 30px;
+}
+
+.section-heading {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 1.3rem;
+}
+
+.section-surface {
+  background: linear-gradient(180deg, rgba(250, 249, 245, 0.045), rgba(250, 249, 245, 0.02));
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 0.9rem;
+}
+
+.feature {
+  padding: 1.15rem;
+}
+
+.feature-large {
+  grid-row: span 2;
+  padding: 1.3rem;
+  background:
+    linear-gradient(180deg, rgba(217, 119, 87, 0.14), rgba(250, 249, 245, 0.03)),
+    rgba(250, 249, 245, 0.03);
+}
+
+.feature-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 0.95rem;
+  padding: 0.34rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(250, 249, 245, 0.09);
+  color: var(--card);
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.feature-tag-warm {
+  background: rgba(217, 119, 87, 0.16);
+}
+
+.feature-tag-blue {
+  background: rgba(106, 155, 204, 0.16);
+}
+
+.feature-tag-green {
+  background: rgba(120, 140, 93, 0.2);
+}
+
+.feature p,
+.workflow-step p,
+.install-block p {
+  margin-top: 0.6rem;
+  color: var(--muted);
+}
+
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.workflow-step {
+  padding: 1.1rem;
+}
+
+.workflow-step span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  margin-bottom: 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 249, 245, 0.14);
+  background: rgba(250, 249, 245, 0.04);
+  font-family: "Poppins", Arial, sans-serif;
+  font-weight: 700;
+  color: var(--card);
+}
+
+.section-install {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 1rem;
+  padding: 28px 30px;
+  background:
+    radial-gradient(circle at top left, rgba(217, 119, 87, 0.14), transparent 24%),
+    rgba(31, 30, 26, 0.82);
+}
+
+.install-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.install-block {
+  padding: 1rem;
+}
+
+.install-block p {
+  margin: 0 0 0.75rem;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--card-dim);
+}
+
+.install-block pre {
+  font-size: 0.88rem;
+}
+
+.footer {
+  padding: 22px 0 0;
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+
+.footer p {
+  margin: 0;
+  padding-left: 2px;
+}
+
+.footer a {
+  color: var(--card);
+}
+
+.footer a:hover,
+.topnav a:hover {
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(217, 119, 87, 0.95);
+  outline-offset: 3px;
+}
+
+@media (max-width: 1040px) {
+  .hero,
+  .section-install {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .feature-large {
+    grid-row: auto;
+  }
+
+  .workflow-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --page-width: min(100vw - 1rem, 1160px);
+  }
+
+  .page-frame {
+    padding: 12px 0 28px;
+  }
+
+  .topbar,
+  .hero,
+  .section,
+  .section-install {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .topnav {
+    justify-content: flex-start;
+    gap: 0.75rem 1rem;
+  }
+
+  .stats,
+  .feature-grid,
+  .install-panel {
+    grid-template-columns: 1fr;
+  }
+
+  h1 {
+    max-width: 12ch;
+  }
+
+  .hero {
+    gap: 18px;
+  }
+}
