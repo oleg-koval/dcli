@@ -1,0 +1,51 @@
+name: deploy github pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: configure pages
+        uses: actions/configure-pages@v5
+
+      - name: assemble site
+        run: |
+          rm -rf public
+          mkdir -p public/assets
+          cp index.html public/index.html
+          cp icon.svg public/icon.svg
+          cp assets/site.css public/assets/site.css
+          touch public/.nojekyll
+
+      - name: upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
