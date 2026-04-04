@@ -8,7 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Stack:** Go 1.25.0+, Cobra CLI framework, YAML configuration
 **Status:** Alpha release (v0.1.0)
-**Key Dependencies:** Cobra, gopkg.in/yaml.v3, and github.com/creativeprojects/go-selfupdate for startup updates
+**Key Dependencies:** Cobra, gopkg.in/yaml.v3, and `github.com/creativeprojects/go-selfupdate v1.5.2` for startup updates
+**Approved Exception:** `github.com/creativeprojects/go-selfupdate v1.5.2` is intentionally included for the auto-update feature. Maintainers approved this exception to the "Cobra and gopkg.in/yaml.v3" dependency guideline.
 
 ## Quick Commands
 
@@ -59,7 +60,7 @@ dcli/
 ### Key Design Decisions
 
 1. **Cobra for CLI:** Standard Go CLI framework provides command structure and automatic help/versioning
-2. **Minimal Dependencies:** Core CLI code stays on Cobra and YAML; startup updates use github.com/creativeprojects/go-selfupdate
+2. **Minimal Dependencies:** Core CLI code stays on Cobra and YAML; startup updates use `github.com/creativeprojects/go-selfupdate v1.5.2`
 3. **Config at ~/.dcli/config.yaml:** User's home directory for easy discovery and cross-platform support
 4. **Package Organization:** 
    - `cmd/` contains all CLI commands (test in same package with _test.go suffix)
