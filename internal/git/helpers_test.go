@@ -11,7 +11,9 @@ func cleanupDir(t *testing.T, path string) {
 	t.Helper()
 
 	t.Cleanup(func() {
-		_ = os.RemoveAll(path)
+		if err := os.RemoveAll(path); err != nil {
+			t.Errorf("cleanup failed for %s: %v", path, err)
+		}
 	})
 }
 
