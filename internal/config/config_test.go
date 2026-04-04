@@ -6,28 +6,35 @@ import (
 	"testing"
 )
 
-func setEnv(t *testing.T, key, value string) {
+func setHomeForTest(t *testing.T, home string) {
 	t.Helper()
 
-	if err := os.Setenv(key, value); err != nil {
-		t.Fatalf("failed to set %s: %v", key, err)
+	oldHome, hadHome := os.LookupEnv("HOME")
+	if err := os.Setenv("HOME", home); err != nil {
+		t.Fatalf("failed to set HOME: %v", err)
 	}
+
+	t.Cleanup(func() {
+		var err error
+		if hadHome {
+			err = os.Setenv("HOME", oldHome)
+		} else {
+			err = os.Unsetenv("HOME")
+		}
+		if err != nil {
+			t.Errorf("failed to restore HOME: %v", err)
+		}
+	})
 }
 
-func unsetEnv(t *testing.T, key string) {
+func cleanupDirForTest(t *testing.T, path string) {
 	t.Helper()
 
-	if err := os.Unsetenv(key); err != nil {
-		t.Fatalf("failed to unset %s: %v", key, err)
-	}
-}
-
-func removeAll(t *testing.T, path string) {
-	t.Helper()
-
-	if err := os.RemoveAll(path); err != nil {
-		t.Fatalf("failed to remove %s: %v", path, err)
-	}
+	t.Cleanup(func() {
+		if err := os.RemoveAll(path); err != nil {
+			t.Errorf("cleanup failed for %s: %v", path, err)
+		}
+	})
 }
 
 func TestGetConfigPath(t *testing.T) {
@@ -53,18 +60,9 @@ func TestLoadConfigFileNotExist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer removeAll(t, tmpHome)
+	cleanupDirForTest(t, tmpHome)
 
-	// Override HOME environment variable
-	oldHome := os.Getenv("HOME")
-	defer func() {
-		if oldHome != "" {
-			setEnv(t, "HOME", oldHome)
-		} else {
-			unsetEnv(t, "HOME")
-		}
-	}()
-	setEnv(t, "HOME", tmpHome)
+	setHomeForTest(t, tmpHome)
 
 	cfg, err := Load()
 	if err != nil {
@@ -86,7 +84,7 @@ func TestLoadConfigValid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer removeAll(t, tmpHome)
+	cleanupDirForTest(t, tmpHome)
 
 	// Create .dcli directory
 	dcliDir := filepath.Join(tmpHome, ".dcli")
@@ -108,16 +106,7 @@ func TestLoadConfigValid(t *testing.T) {
 		t.Fatalf("failed to write config file: %v", err)
 	}
 
-	// Override HOME environment variable
-	oldHome := os.Getenv("HOME")
-	defer func() {
-		if oldHome != "" {
-			setEnv(t, "HOME", oldHome)
-		} else {
-			unsetEnv(t, "HOME")
-		}
-	}()
-	setEnv(t, "HOME", tmpHome)
+	setHomeForTest(t, tmpHome)
 
 	cfg, err := Load()
 	if err != nil {
@@ -146,7 +135,7 @@ func TestLoadConfigInvalidYAML(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer removeAll(t, tmpHome)
+	cleanupDirForTest(t, tmpHome)
 
 	dcliDir := filepath.Join(tmpHome, ".dcli")
 	if err := os.MkdirAll(dcliDir, 0755); err != nil {
@@ -163,15 +152,7 @@ func TestLoadConfigInvalidYAML(t *testing.T) {
 		t.Fatalf("failed to write config file: %v", err)
 	}
 
-	oldHome := os.Getenv("HOME")
-	defer func() {
-		if oldHome != "" {
-			setEnv(t, "HOME", oldHome)
-		} else {
-			unsetEnv(t, "HOME")
-		}
-	}()
-	setEnv(t, "HOME", tmpHome)
+	setHomeForTest(t, tmpHome)
 
 	_, err = Load()
 	if err == nil {
@@ -184,7 +165,7 @@ func TestLoadConfigEmptyFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer removeAll(t, tmpHome)
+	cleanupDirForTest(t, tmpHome)
 
 	dcliDir := filepath.Join(tmpHome, ".dcli")
 	if err := os.MkdirAll(dcliDir, 0755); err != nil {
@@ -196,15 +177,7 @@ func TestLoadConfigEmptyFile(t *testing.T) {
 		t.Fatalf("failed to write empty config file: %v", err)
 	}
 
-	oldHome := os.Getenv("HOME")
-	defer func() {
-		if oldHome != "" {
-			setEnv(t, "HOME", oldHome)
-		} else {
-			unsetEnv(t, "HOME")
-		}
-	}()
-	setEnv(t, "HOME", tmpHome)
+	setHomeForTest(t, tmpHome)
 
 	cfg, err := Load()
 	if err != nil {
@@ -226,17 +199,9 @@ func TestSaveConfigCreateDir(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer removeAll(t, tmpHome)
+	cleanupDirForTest(t, tmpHome)
 
-	oldHome := os.Getenv("HOME")
-	defer func() {
-		if oldHome != "" {
-			setEnv(t, "HOME", oldHome)
-		} else {
-			unsetEnv(t, "HOME")
-		}
-	}()
-	setEnv(t, "HOME", tmpHome)
+	setHomeForTest(t, tmpHome)
 
 	cfg := &Config{
 		Repositories: []Repository{
@@ -257,6 +222,15 @@ func TestSaveConfigCreateDir(t *testing.T) {
 	if _, err := os.Stat(configFile); err != nil {
 		t.Fatalf("config file not created: %v", err)
 	}
+
+	configDir := filepath.Join(tmpHome, ".dcli")
+	info, err := os.Stat(configDir)
+	if err != nil {
+		t.Fatalf("config dir not created: %v", err)
+	}
+	if mode := info.Mode().Perm(); mode != 0o700 {
+		t.Fatalf("expected config dir mode 0700, got %04o", mode)
+	}
 }
 
 func TestSaveConfigWrite(t *testing.T) {
@@ -264,17 +238,9 @@ func TestSaveConfigWrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer removeAll(t, tmpHome)
+	cleanupDirForTest(t, tmpHome)
 
-	oldHome := os.Getenv("HOME")
-	defer func() {
-		if oldHome != "" {
-			setEnv(t, "HOME", oldHome)
-		} else {
-			unsetEnv(t, "HOME")
-		}
-	}()
-	setEnv(t, "HOME", tmpHome)
+	setHomeForTest(t, tmpHome)
 
 	cfg := &Config{
 		Repositories: []Repository{
@@ -324,17 +290,9 @@ func TestSaveAndLoadRoundtrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp home: %v", err)
 	}
-	defer removeAll(t, tmpHome)
+	cleanupDirForTest(t, tmpHome)
 
-	oldHome := os.Getenv("HOME")
-	defer func() {
-		if oldHome != "" {
-			setEnv(t, "HOME", oldHome)
-		} else {
-			unsetEnv(t, "HOME")
-		}
-	}()
-	setEnv(t, "HOME", tmpHome)
+	setHomeForTest(t, tmpHome)
 
 	// Create original config
 	originalCfg := &Config{
@@ -378,6 +336,35 @@ func TestSaveAndLoadRoundtrip(t *testing.T) {
 		if repo.Remote != originalCfg.Repositories[i].Remote {
 			t.Errorf("repo %d: expected remote %s, got %s", i, originalCfg.Repositories[i].Remote, repo.Remote)
 		}
+	}
+}
+
+func TestSaveConfigCreateDirFailure(t *testing.T) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	if err != nil {
+		t.Fatalf("failed to create temp home: %v", err)
+	}
+	cleanupDirForTest(t, tmpHome)
+
+	blocker := filepath.Join(tmpHome, ".dcli")
+	if err := os.WriteFile(blocker, []byte("blocker"), 0o600); err != nil {
+		t.Fatalf("failed to create blocker file: %v", err)
+	}
+
+	setHomeForTest(t, tmpHome)
+
+	cfg := &Config{
+		Repositories: []Repository{
+			{
+				Name:   "test",
+				Path:   "/test/path",
+				Remote: "origin",
+			},
+		},
+	}
+
+	if err := cfg.Save(); err == nil {
+		t.Fatal("expected Save to fail when config directory path is blocked")
 	}
 }
 

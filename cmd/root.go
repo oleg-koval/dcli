@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 
+	"github.com/oleg-koval/dcli/internal/autoupdate"
 	"github.com/spf13/cobra"
 )
 
@@ -23,12 +25,23 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+type startupUpdater interface {
+	Run(ctx context.Context, currentVersion string, args []string)
+}
+
+var autoUpdateRunner startupUpdater = autoupdate.NewRunner(autoupdate.Repository{
+	Owner: "oleg-koval",
+	Name:  "dcli",
+})
+
 func init() {
 	// Note: dockerCmd is added in docker.go init function
 }
 
 // Execute runs the root command
 func Execute() {
+	autoUpdateRunner.Run(context.Background(), Version, os.Args)
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

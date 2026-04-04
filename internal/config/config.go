@@ -36,7 +36,8 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
-	data, err := os.ReadFile(configPath) // #nosec G304 -- configPath is validated against the user's HOME directory
+	// #nosec G304 -- configPath is derived from the current user's home directory.
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Return empty config if file doesn't exist
