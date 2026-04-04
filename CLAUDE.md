@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **dcli** is a lightweight Docker Compose and Git management CLI written in Go. It allows users to clean/restart Docker services and batch reset Git repositories across a multi-repository setup.
 
-**Stack:** Go 1.21+, Cobra CLI framework, YAML configuration
+**Stack:** Go 1.25.0+, Cobra CLI framework, YAML configuration
 **Status:** Alpha release (v0.1.0)
-**Key Dependencies:** Only Cobra and gopkg.in/yaml.v3 (minimal footprint)
+**Key Dependencies:** Cobra, gopkg.in/yaml.v3, and github.com/creativeprojects/go-selfupdate for startup updates
 
 ## Quick Commands
 
@@ -59,7 +59,7 @@ dcli/
 ### Key Design Decisions
 
 1. **Cobra for CLI:** Standard Go CLI framework provides command structure and automatic help/versioning
-2. **Minimal Dependencies:** Only Cobra and YAML library; no heavy external dependencies
+2. **Minimal Dependencies:** Core CLI code stays on Cobra and YAML; startup updates use github.com/creativeprojects/go-selfupdate
 3. **Config at ~/.dcli/config.yaml:** User's home directory for easy discovery and cross-platform support
 4. **Package Organization:** 
    - `cmd/` contains all CLI commands (test in same package with _test.go suffix)
@@ -86,7 +86,7 @@ dcli/
 - Tests use standard Go testing package
 - Test coverage is tracked (currently 76%+, with core packages at 90%+)
 - Use `-run` flag to run specific tests: `go test -v -run TestDockerClean ./...`
-- CI runs against Go 1.21 and 1.22
+- CI runs against Go 1.25 and stable
 
 ## Configuration
 
@@ -145,7 +145,7 @@ Goal: Maintain 85%+ overall coverage (core packages at 90%+)
 
 ### Static Analysis (SAST)
 - **Tool:** golangci-lint with `.golangci.yml` configuration
-- **Checks:** gosec (security), errcheck, staticcheck, typecheck, exhaustive, and more
+- **Checks:** gosec (security), errcheck, staticcheck, ineffassign, exhaustive, and more
 - **Run:** `make lint` or included in CI/CD pipeline
 - **CI Integration:** Automatically runs on all PRs and commits to main/develop
 

@@ -53,6 +53,7 @@ make build
 Download binaries for your platform from [GitHub Releases](https://github.com/oleg-koval/dcli/releases/tag/v0.1.0)
 
 Set `DCLI_DISABLE_AUTO_UPDATE=1` if you want to skip the startup update check.
+Set `DCLI_AUTO_UPDATE_TIMEOUT=250ms` to adjust the best-effort update check timeout (default: `1s`).
 
 ## Quick Start
 
@@ -99,6 +100,7 @@ repositories:
 ### Environment Variables
 
 - `DCLI_PROJECT_DIR` - Override default project directory (defaults to current directory)
+- `DCLI_AUTO_UPDATE_TIMEOUT` - Override the startup update check timeout using a Go duration string, such as `250ms` or `1s`
 
 Example:
 ```bash
@@ -169,7 +171,7 @@ dcli docker clean           # Clean all microservices
 ## Architecture
 
 dcli is built with:
-- **Go 1.21+** - Compiled language for reliability
+- **Go 1.25.0+** - Compiled language for reliability
 - **Cobra** - Battle-tested CLI framework
 - **YAML** - Human-readable configuration
 - **Docker Compose API** - Direct execution without shells

@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"testing"
+	"time"
 )
 
 type fakeClient struct {
@@ -73,12 +74,39 @@ func TestNormalizeVersion(t *testing.T) {
 	}
 }
 
+func TestNewRunnerDefaultTimeout(t *testing.T) {
+	t.Setenv(TimeoutEnvVar, "")
+
+	runner := NewRunner(Repository{Owner: "oleg-koval", Name: "dcli"})
+	if runner.Timeout != defaultTimeout {
+		t.Fatalf("expected default timeout %s, got %s", defaultTimeout, runner.Timeout)
+	}
+}
+
+func TestNewRunnerTimeoutFromEnv(t *testing.T) {
+	t.Setenv(TimeoutEnvVar, "250ms")
+
+	runner := NewRunner(Repository{Owner: "oleg-koval", Name: "dcli"})
+	if runner.Timeout != 250*time.Millisecond {
+		t.Fatalf("expected timeout 250ms, got %s", runner.Timeout)
+	}
+}
+
+func TestNewRunnerTimeoutFromEnvInvalidFallsBack(t *testing.T) {
+	t.Setenv(TimeoutEnvVar, "not-a-duration")
+
+	runner := NewRunner(Repository{Owner: "oleg-koval", Name: "dcli"})
+	if runner.Timeout != defaultTimeout {
+		t.Fatalf("expected default timeout %s, got %s", defaultTimeout, runner.Timeout)
+	}
+}
+
 func TestSelectReleaseAsset(t *testing.T) {
 	t.Parallel()
 
 	project := "dcli"
 	version := "v1.2.3"
-	assetName := assetCandidates(project, version, runtime.GOOS, runtime.GOARCH)[2]
+	assetName := assetCandidates(project, version, runtime.GOOS, runtime.GOARCH)[0]
 	release := &githubRelease{
 		TagName: version,
 		Assets: []githubAsset{
@@ -119,7 +147,7 @@ func TestSelectReleaseAssetMissing(t *testing.T) {
 func TestGitHubClientLatestRelease(t *testing.T) {
 	t.Parallel()
 
-	assetName := assetCandidates("dcli", "v1.2.3", runtime.GOOS, runtime.GOARCH)[2]
+	assetName := assetCandidates("dcli", "v1.2.3", runtime.GOOS, runtime.GOARCH)[0]
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/repos/oleg-koval/dcli/releases/latest" {
 			t.Fatalf("unexpected path %q", r.URL.Path)
@@ -192,6 +220,8 @@ func TestRunnerSkipsWhenDisabled(t *testing.T) {
 }
 
 func TestRunnerNoUpdate(t *testing.T) {
+	t.Parallel()
+
 	client := &fakeClient{latest: &Release{Version: "v1.0.0"}}
 	restarter := &fakeRestarter{}
 	runner := &Runner{
@@ -219,6 +249,8 @@ func TestRunnerNoUpdate(t *testing.T) {
 }
 
 func TestRunnerUpdateTriggersRestart(t *testing.T) {
+	t.Parallel()
+
 	client := &fakeClient{
 		latest: &Release{
 			Version:   "v2.0.0",
@@ -270,6 +302,8 @@ func TestRunnerUpdateTriggersRestart(t *testing.T) {
 }
 
 func TestRunnerUpdateFailureIgnored(t *testing.T) {
+	t.Parallel()
+
 	client := &fakeClient{
 		latest: &Release{
 			Version:   "v2.0.0",
@@ -301,6 +335,8 @@ func TestRunnerUpdateFailureIgnored(t *testing.T) {
 }
 
 func TestRunnerLatestReleaseErrorIgnored(t *testing.T) {
+	t.Parallel()
+
 	client := &fakeClient{latestErr: errors.New("network down")}
 	restarter := &fakeRestarter{}
 	runner := &Runner{

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -18,7 +19,9 @@ import (
 
 const DisableEnvVar = "DCLI_DISABLE_AUTO_UPDATE"
 
-const defaultTimeout = 15 * time.Second
+const TimeoutEnvVar = "DCLI_AUTO_UPDATE_TIMEOUT"
+
+const defaultTimeout = 1 * time.Second
 
 const githubAPIBaseURL = "https://api.github.com"
 
@@ -55,11 +58,25 @@ func NewRunner(repository Repository) *Runner {
 		Client:        NewGitHubClient(),
 		Repository:    repository,
 		DisableEnvVar: DisableEnvVar,
-		Timeout:       defaultTimeout,
+		Timeout:       defaultRunnerTimeout(),
 		Executable:    os.Executable,
 		Environment:   os.Environ,
 		Restart:       restartBinary,
 	}
+}
+
+func defaultRunnerTimeout() time.Duration {
+	raw, ok := os.LookupEnv(TimeoutEnvVar)
+	if !ok {
+		return defaultTimeout
+	}
+
+	timeout, err := time.ParseDuration(strings.TrimSpace(raw))
+	if err != nil || timeout <= 0 {
+		return defaultTimeout
+	}
+
+	return timeout
 }
 
 func (r *Runner) Run(ctx context.Context, currentVersion string, args []string) {
@@ -115,7 +132,17 @@ func (r *Runner) Run(ctx context.Context, currentVersion string, args []string) 
 		env = append(env, r.DisableEnvVar+"=1")
 	}
 
-	_ = r.Restart(executable, args, env)
+	if err := r.Restart(executable, args, env); err != nil {
+		log.Printf(
+			"auto-update restart failed for %s/%s version=%s executable=%q args=%q: %v",
+			r.Repository.Owner,
+			r.Repository.Name,
+			release.Version,
+			executable,
+			args,
+			err,
+		)
+	}
 }
 
 type GitHubClient struct {

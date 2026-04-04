@@ -9,14 +9,14 @@ import (
 func setHomeForTest(t *testing.T, home string) {
 	t.Helper()
 
-	oldHome := os.Getenv("HOME")
+	oldHome, hadHome := os.LookupEnv("HOME")
 	if err := os.Setenv("HOME", home); err != nil {
 		t.Fatalf("failed to set HOME: %v", err)
 	}
 
 	t.Cleanup(func() {
 		var err error
-		if oldHome != "" {
+		if hadHome {
 			err = os.Setenv("HOME", oldHome)
 		} else {
 			err = os.Unsetenv("HOME")
@@ -222,6 +222,15 @@ func TestSaveConfigCreateDir(t *testing.T) {
 	if _, err := os.Stat(configFile); err != nil {
 		t.Fatalf("config file not created: %v", err)
 	}
+
+	configDir := filepath.Join(tmpHome, ".dcli")
+	info, err := os.Stat(configDir)
+	if err != nil {
+		t.Fatalf("config dir not created: %v", err)
+	}
+	if mode := info.Mode().Perm(); mode != 0o700 {
+		t.Fatalf("expected config dir mode 0700, got %04o", mode)
+	}
 }
 
 func TestSaveConfigWrite(t *testing.T) {
@@ -327,6 +336,35 @@ func TestSaveAndLoadRoundtrip(t *testing.T) {
 		if repo.Remote != originalCfg.Repositories[i].Remote {
 			t.Errorf("repo %d: expected remote %s, got %s", i, originalCfg.Repositories[i].Remote, repo.Remote)
 		}
+	}
+}
+
+func TestSaveConfigCreateDirFailure(t *testing.T) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	if err != nil {
+		t.Fatalf("failed to create temp home: %v", err)
+	}
+	cleanupDirForTest(t, tmpHome)
+
+	blocker := filepath.Join(tmpHome, ".dcli")
+	if err := os.WriteFile(blocker, []byte("blocker"), 0o600); err != nil {
+		t.Fatalf("failed to create blocker file: %v", err)
+	}
+
+	setHomeForTest(t, tmpHome)
+
+	cfg := &Config{
+		Repositories: []Repository{
+			{
+				Name:   "test",
+				Path:   "/test/path",
+				Remote: "origin",
+			},
+		},
+	}
+
+	if err := cfg.Save(); err == nil {
+		t.Fatal("expected Save to fail when config directory path is blocked")
 	}
 }
 
