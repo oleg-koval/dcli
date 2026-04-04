@@ -9,31 +9,14 @@ import (
 func setHomeForTest(t *testing.T, home string) {
 	t.Helper()
 
-	oldHome, hadHome := os.LookupEnv("HOME")
-	if err := os.Setenv("HOME", home); err != nil {
-		t.Fatalf("failed to set HOME: %v", err)
-	}
-
-	t.Cleanup(func() {
-		var err error
-		if hadHome {
-			err = os.Setenv("HOME", oldHome)
-		} else {
-			err = os.Unsetenv("HOME")
-		}
-		if err != nil {
-			t.Errorf("failed to restore HOME: %v", err)
-		}
-	})
+	t.Setenv("HOME", home)
 }
 
 func cleanupDirForTest(t *testing.T, path string) {
 	t.Helper()
 
 	t.Cleanup(func() {
-		if err := os.RemoveAll(path); err != nil {
-			t.Errorf("cleanup failed for %s: %v", path, err)
-		}
+		_ = os.RemoveAll(path)
 	})
 }
 
