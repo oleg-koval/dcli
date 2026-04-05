@@ -10,7 +10,6 @@ on:
       - 'go.mod'
       - 'go.sum'
       - 'Makefile'
-      - 'tools.go'
       - '.golangci.yml'
       - '.goreleaser.yml'
       - '.github/workflows/**'
@@ -42,4 +41,4 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
-          wait_for_processing: true
+          wait-for-processing: true

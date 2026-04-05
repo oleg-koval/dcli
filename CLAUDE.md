@@ -62,7 +62,7 @@ dcli/
 1. **Cobra for CLI:** Standard Go CLI framework provides command structure and automatic help/versioning
 2. **Minimal Dependencies:** Core CLI code stays on Cobra and YAML; startup updates use `github.com/creativeprojects/go-selfupdate v1.5.2`
 3. **Config at ~/.dcli/config.yaml:** User's home directory for easy discovery and cross-platform support
-4. **Package Organization:** 
+4. **Package Organization:**
    - `cmd/` contains all CLI commands (test in same package with _test.go suffix)
    - `internal/` contains domain logic separated by concern (config, docker, git)
    - Each domain has a helpers file with core logic + corresponding test file
@@ -161,7 +161,7 @@ Goal: Maintain 85%+ overall coverage (core packages at 90%+)
 
 ### Dependency Management
 - **Pinned Dependencies:** All dependencies tracked in `go.mod` with explicit versions
-- **Build Tools:** Tracked in `tools.go` to ensure reproducible builds
+- **Build Tools:** `golangci-lint` is pinned via `go.mod` `tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint` (Go 1.24+); `make lint` runs `go run …@$$(go list -m …)` so the version stays in sync with `go.mod`
 - **Automated Updates:** Dependabot configuration at `.github/dependabot.yml`
   - Weekly updates for Go modules and GitHub Actions
   - Automatic PRs with dependency updates

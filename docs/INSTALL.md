@@ -16,6 +16,7 @@ brew upgrade dcli
 `dcli` also checks GitHub Releases on launch and updates itself when a newer version is available.
 Set `DCLI_DISABLE_AUTO_UPDATE=1` to skip that check.
 Set `DCLI_AUTO_UPDATE_TIMEOUT` to tune how long that best-effort check can wait before giving up.
+Set `DCLI_AUTO_UPDATE_CHANNEL` to `prerelease`, `beta`, or `alpha` to follow prerelease GitHub releases (see `docs/CONFIGURATION.md`).
 
 ## From Source
 

@@ -43,6 +43,8 @@ checksum:
 release:
   name_template: 'Release {{.Version}}'
   draft: false
+  # Mark GitHub prerelease when the tag looks like a pre-release (e.g. v0.2.0-beta.1+sha).
+  prerelease: auto
   footer: |
     ## Installation
 
