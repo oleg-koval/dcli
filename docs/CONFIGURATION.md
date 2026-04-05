@@ -23,6 +23,34 @@ repositories:
 - `path`: Absolute path to the Git repository
 - `name`: Human-readable name (used in output)
 
+## Custom Command Packs
+
+Custom commands are stored in JSON pack files:
+
+- Local personal pack: `~/.dcli/commands.json`
+- Repo-shared pack: `./.dcli/commands.json` at the repository root
+
+Shared packs load automatically when you run dcli inside a repository that contains a pack file. Local packs are always loaded from your home directory.
+
+Use `dcli commands` to inspect loaded commands, `dcli commands add` to create a personal shortcut, and `dcli commands export` / `dcli commands import` to move packs between developers.
+Use `dcli <command>` for normal execution. The command-management surface lives under `dcli commands`, and the interactive browser is `dcli commands ui`.
+
+For an interactive browser, use:
+
+```bash
+dcli commands ui --export-file ./team-pack.json
+```
+
+Inside the UI:
+
+- `j/k` or arrow keys move the cursor
+- `space` selects commands for export
+- `enter` or `r` runs the highlighted command
+- `e` toggles enable/disable
+- `d` deletes the highlighted command
+- `x` exports the selected commands to the file passed with `--export-file`
+- `q` quits
+
 ### Creating Config File
 
 If the file doesn't exist, create it:
