@@ -1,10 +1,29 @@
 name: Tests
 
+# Run only when Go sources, modules, or CI/release config change (skip doc-only / random YAML).
 on:
   push:
     branches: [main, develop]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - 'tools.go'
+      - '.golangci.yml'
+      - '.goreleaser.yml'
+      - '.github/workflows/**'
   pull_request:
     branches: [main, develop]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - 'tools.go'
+      - '.golangci.yml'
+      - '.goreleaser.yml'
+      - '.github/workflows/**'
 
 jobs:
   test:

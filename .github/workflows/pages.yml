@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'index.html'
+      - 'icon.svg'
+      - 'assets/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:

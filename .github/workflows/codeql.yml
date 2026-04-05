@@ -3,8 +3,26 @@ name: CodeQL Analysis
 on:
   push:
     branches: [main, develop]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - 'tools.go'
+      - '.golangci.yml'
+      - '.goreleaser.yml'
+      - '.github/workflows/**'
   pull_request:
     branches: [main, develop]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - 'tools.go'
+      - '.golangci.yml'
+      - '.goreleaser.yml'
+      - '.github/workflows/**'
   schedule:
     # Run CodeQL daily at 2 AM UTC
     - cron: '0 2 * * *'

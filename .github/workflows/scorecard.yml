@@ -5,6 +5,15 @@ on:
     - cron: '22 8 * * 1'
   push:
     branches: ["main"]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - 'tools.go'
+      - '.golangci.yml'
+      - '.goreleaser.yml'
+      - '.github/workflows/**'
 
 permissions: read-all
 

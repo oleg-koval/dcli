@@ -7,6 +7,15 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - 'tools.go'
+      - '.golangci.yml'
+      - '.goreleaser.yml'
+      - '.github/workflows/**'
 
 permissions:
   contents: write
