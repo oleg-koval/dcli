@@ -5,6 +5,14 @@ on:
     - cron: '22 8 * * 1'
   push:
     branches: ["main"]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - '.golangci.yml'
+      - '.goreleaser.yml'
+      - '.github/workflows/**'
 
 permissions: read-all
 
@@ -33,4 +41,4 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
-          wait_for_processing: true
+          wait-for-processing: true

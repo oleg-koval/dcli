@@ -56,6 +56,7 @@ Download binaries for your platform from [GitHub Releases](https://github.com/ol
 
 Set `DCLI_DISABLE_AUTO_UPDATE=1` if you want to skip the startup update check.
 Set `DCLI_AUTO_UPDATE_TIMEOUT=250ms` to adjust the best-effort update check timeout (default: `1s`).
+Set `DCLI_AUTO_UPDATE_CHANNEL=prerelease` (or `beta` / `alpha`) to follow prerelease builds from GitHub Releases instead of stable only.
 
 ## Quick Start
 
@@ -238,7 +239,7 @@ MIT License - see [LICENSE](LICENSE) for details
 
 <p align="center">
   <strong>dcli makes container, repository, and custom command management effortless</strong><br>
-  <a href="https://github.com/oleg-koval/dcli/issues">Report Issues</a> • 
+  <a href="https://github.com/oleg-koval/dcli/issues">Report Issues</a> •
   <a href="https://github.com/oleg-koval/dcli/discussions">Discussions</a> •
   <a href="https://github.com/oleg-koval/dcli/releases">Releases</a>
 </p>

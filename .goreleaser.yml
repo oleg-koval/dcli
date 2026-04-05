@@ -1,4 +1,5 @@
-version: 1
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
 project_name: dcli
 
 before:
@@ -24,11 +25,11 @@ builds:
 
 archives:
   - id: dcli
-    builds:
+    ids:
       - dcli
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
     name_template: '{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}'
     files:
       - LICENSE
@@ -42,6 +43,8 @@ checksum:
 release:
   name_template: 'Release {{.Version}}'
   draft: false
+  # Mark GitHub prerelease when the tag looks like a pre-release (e.g. v0.2.0-beta.1+sha).
+  prerelease: auto
   footer: |
     ## Installation
 
@@ -64,10 +67,11 @@ release:
 
 brews:
   - name: dcli
-    tap:
+    repository:
       owner: oleg-koval
       name: homebrew-dcli
       branch: main
+      token: '{{ .Env.HOMEBREW_TAP_TOKEN }}'
     commit_author:
       name: dcli-bot
       email: bot@dcli.dev
@@ -75,7 +79,7 @@ brews:
     homepage: https://github.com/oleg-koval/dcli
     description: Lightweight Docker Compose and Git management CLI
     license: MIT
-    folder: Formula
+    directory: Formula
     install: |
       bin.install "dcli"
     test: |
@@ -87,7 +91,7 @@ brews:
         type: optional
 
 changelog:
-  skip: false
+  disable: false
   use: git
   sort: asc
   filters:

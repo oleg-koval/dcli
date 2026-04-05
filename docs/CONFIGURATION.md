@@ -96,6 +96,23 @@ DCLI_AUTO_UPDATE_TIMEOUT=250ms dcli git reset develop
 
 The default timeout is `1s`.
 
+### DCLI_AUTO_UPDATE_CHANNEL
+
+Choose which GitHub Releases line the startup updater may install (default: stable only).
+
+| Value | Behavior |
+|-------|----------|
+| `stable` or unset | Latest **non-prerelease** GitHub release (same as before). |
+| `prerelease` or `pre` | Newest semver among **prerelease** GitHub releases with a matching binary. |
+| `beta` | Like `prerelease`, but only tags containing `-beta` (case-insensitive). |
+| `alpha` | Like `prerelease`, but only tags containing `-alpha`. |
+
+Unknown values fall back to `stable`.
+
+```bash
+DCLI_AUTO_UPDATE_CHANNEL=prerelease dcli docker clean
+```
+
 ## Examples
 
 ### Docker Compose in subdirectory
