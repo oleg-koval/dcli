@@ -152,6 +152,12 @@ Include:
 - Alternatives considered
 - Any additional context
 
+## Releases
+
+Merging to `main` triggers the [Release](.github/workflows/release.yml) workflow (tests, lint, then GoReleaser).
+
+The published version is **`v` + `cmd/root.go` `Version` + `+` + short git SHA** (valid semver build metadata), e.g. `v0.2.0+acfd079`. Bump the `Version` string in `cmd/root.go` when you want a new user-facing release line; every merge still gets a unique artifact tag.
+
 ## Project Roadmap
 
 Current priorities:

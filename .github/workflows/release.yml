@@ -1,5 +1,8 @@
 name: Release
 
+# Run on every merge to main. Version = cmd/root.go `Version` + semver build metadata
+# (+<git short sha>) so each release is unique without using `git describe` (which
+# produced chained pseudo-tags when those strings were published as tags).
 on:
   push:
     branches:
@@ -41,11 +44,18 @@ jobs:
         with:
           go-version: '1.25'
 
-      - name: Generate version from git
+      - name: Compose release version
         id: version
         run: |
-          VERSION="$(git describe --tags --always --dirty 2>/dev/null || echo "v0.1.0-$(git rev-parse --short HEAD)")"
+          BASE="$(awk -F'"' '/^[[:space:]]*Version[[:space:]]*=/ {print $2; exit}' cmd/root.go)"
+          if [ -z "$BASE" ]; then
+            echo "::error::Could not read Version from cmd/root.go"
+            exit 1
+          fi
+          SHORT="$(git rev-parse --short HEAD)"
+          VERSION="v${BASE}+${SHORT}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Releasing ${VERSION}"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
