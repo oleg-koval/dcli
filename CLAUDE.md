@@ -161,7 +161,7 @@ Goal: Maintain 85%+ overall coverage (core packages at 90%+)
 
 ### Dependency Management
 - **Pinned Dependencies:** All dependencies tracked in `go.mod` with explicit versions
-- **Build Tools:** `golangci-lint` is pinned via `go.mod` `tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint` (Go 1.24+); `make lint` runs `go run …@$$(go list -m …)` so the version stays in sync with `go.mod`
+- **Build Tools:** `golangci-lint` is pinned via `tools/tools.go` (`//go:build tools`) as a blank import of `github.com/golangci/golangci-lint/v2/cmd/golangci-lint`, which records the version in `go.mod`’s `require`; `make lint` runs `go run …@$$(go list -m …)` so the version stays in sync with `go.mod`
 - **Automated Updates:** Dependabot configuration at `.github/dependabot.yml`
   - Weekly updates for Go modules and GitHub Actions
   - Automatic PRs with dependency updates
