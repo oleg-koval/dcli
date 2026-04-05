@@ -1,8 +1,8 @@
 name: Release
 
-# Publish only when a semver tag is pushed (e.g. v0.2.0). Do not derive the
-# release version from `git describe`: that produced pseudo-tags like
-# v0.1.0-27-gabc1234, which were then tagged again and chained into unusable names.
+# Run on every merge to main. Version = cmd/root.go `Version` + semver build metadata
+# (+<git short sha>) so each release is unique without using `git describe` (which
+# produced chained pseudo-tags when those strings were published as tags).
 on:
   push:
     tags:
@@ -43,6 +43,19 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: '1.25'
+
+      - name: Compose release version
+        id: version
+        run: |
+          BASE="$(awk -F'"' '/^[[:space:]]*Version[[:space:]]*=/ {print $2; exit}' cmd/root.go)"
+          if [ -z "$BASE" ]; then
+            echo "::error::Could not read Version from cmd/root.go"
+            exit 1
+          fi
+          SHORT="$(git rev-parse --short HEAD)"
+          VERSION="v${BASE}+${SHORT}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Releasing ${VERSION}"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5

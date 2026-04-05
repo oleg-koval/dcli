@@ -152,22 +152,11 @@ Include:
 - Alternatives considered
 - Any additional context
 
-## Releasing (maintainers)
+## Releases
 
-Releases are **tag-driven**, not “every push to `main`”.
+Merging to `main` triggers the [Release](.github/workflows/release.yml) workflow (tests, lint, then GoReleaser).
 
-1. Update the default version string in `cmd/root.go` to match the release (dev builds and docs).
-2. Commit on `main` (or merge a release-prep PR).
-3. Create and push an annotated semver tag:
-
-   ```bash
-   git tag -a v0.2.0 -m "Release v0.2.0"
-   git push origin v0.2.0
-   ```
-
-The [Release workflow](.github/workflows/release.yml) runs GoReleaser using that tag as `{{.Version}}` (artifacts, `ldflags`, GitHub Release, Homebrew tap).
-
-Use tags of the form `vMAJOR.MINOR.PATCH` only (e.g. `v0.2.0`, `v1.0.0`). Do not tag `git describe` output.
+The published version is **`v` + `cmd/root.go` `Version` + `+` + short git SHA** (valid semver build metadata), e.g. `v0.2.0+acfd079`. Bump the `Version` string in `cmd/root.go` when you want a new user-facing release line; every merge still gets a unique artifact tag.
 
 ## Project Roadmap
 
