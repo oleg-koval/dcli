@@ -3,19 +3,11 @@ name: Release
 # Run on every merge to main. Version = cmd/root.go `Version` + semver build metadata
 # (+<git short sha>) so each release is unique without using `git describe` (which
 # produced chained pseudo-tags when those strings were published as tags).
+# No path filter: doc-only or config-only merges still need a release when you ship main.
 on:
   push:
     branches:
       - main
-    paths:
-      - '**.go'
-      - 'go.mod'
-      - 'go.sum'
-      - 'Makefile'
-      - 'tools.go'
-      - '.golangci.yml'
-      - '.goreleaser.yml'
-      - '.github/workflows/**'
 
 permissions:
   contents: write
@@ -67,10 +59,12 @@ jobs:
           echo "Releasing ${VERSION}"
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         with:
-          version: latest
-          args: release --clean --skip-validate
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean --skip=validate
         env:
-          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ steps.version.outputs.version }}
