@@ -14,10 +14,12 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:     "dcli",
-	Short:   "Docker CLI - Manage Docker containers and services",
-	Long:    `dcli is a command-line tool for managing Docker containers and services with Git integration support.`,
-	Version: Version,
+	Use:           "dcli",
+	Short:         "Developer CLI for Docker, Git, and command execution",
+	Long:          `dcli is an execution-first command-line tool for Docker services, Git workflows, and user-defined command automation. Use dcli commands to manage custom packs and dcli commands ui for the interactive browser.`,
+	Version:       Version,
+	SilenceUsage:  true,
+	SilenceErrors: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			_ = cmd.Help()
@@ -41,6 +43,11 @@ func init() {
 // Execute runs the root command
 func Execute() {
 	autoUpdateRunner.Run(context.Background(), Version, os.Args)
+
+	if err := registerCustomCommands(rootCmd); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

@@ -152,6 +152,23 @@ Include:
 - Alternatives considered
 - Any additional context
 
+## Releasing (maintainers)
+
+Releases are **tag-driven**, not “every push to `main`”.
+
+1. Update the default version string in `cmd/root.go` to match the release (dev builds and docs).
+2. Commit on `main` (or merge a release-prep PR).
+3. Create and push an annotated semver tag:
+
+   ```bash
+   git tag -a v0.2.0 -m "Release v0.2.0"
+   git push origin v0.2.0
+   ```
+
+The [Release workflow](.github/workflows/release.yml) runs GoReleaser using that tag as `{{.Version}}` (artifacts, `ldflags`, GitHub Release, Homebrew tap).
+
+Use tags of the form `vMAJOR.MINOR.PATCH` only (e.g. `v0.2.0`, `v1.0.0`). Do not tag `git describe` output.
+
 ## Project Roadmap
 
 Current priorities:

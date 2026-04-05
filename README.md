@@ -22,6 +22,8 @@
 
 - 🐳 **Docker Management** - Clean containers/volumes, rebuild, and restart services
 - 🔄 **Git Batch Operations** - Reset multiple repositories to any branch on origin
+- 🧩 **Custom Command Packs** - Save local automation, share repo-pack commands, and export/import packs for onboarding
+- ⚙️ **Execution-First CLI** - Run commands directly; use `dcli commands` and `dcli commands ui` to manage packs and sharing
 - 🚀 **Homebrew Distribution** - Install with a single command: `brew install dcli`
 - 🔄 **Auto-Updates** - Checks GitHub Releases on launch and self-updates when a newer version is available
 - 🖥️ **Cross-Platform** - Works on macOS (Intel & Apple Silicon), Linux, and Windows
@@ -83,6 +85,25 @@ dcli git reset develop
 dcli git reset develop
 ```
 
+### Custom Commands
+
+```bash
+# Add a personal command
+dcli commands add john deploy -- docker compose up -d
+
+# List loaded commands
+dcli commands
+
+# Open the interactive browser for management only
+dcli commands ui
+
+# Export a pack for onboarding
+dcli commands export --file team-pack.json
+
+# Import a shared pack
+dcli commands import --file team-pack.json
+```
+
 ## Configuration
 
 Create `~/.dcli/config.yaml`:
@@ -125,6 +146,21 @@ dcli docker restart [service ...]    # Restart services (preserves data)
 
 ```
 dcli git reset [develop|acceptance]  # Reset all configured repos to specified branch
+```
+
+### Commands Subcommand
+
+```
+dcli commands                         # List loaded commands
+dcli commands show [path...]          # Show details for one command
+dcli commands add [path...] -- <cmd>   # Add a personal command
+dcli commands edit [path...]          # Edit command metadata or replace the step command
+dcli commands enable [path...]        # Enable a command
+dcli commands disable [path...]       # Disable a command
+dcli commands delete [path...]        # Delete a command
+dcli commands export --file <path>    # Export a command pack
+dcli commands import --file <path>    # Import a command pack
+dcli commands ui [--export-file <path>] # Open the command management TUI
 ```
 
 ## System Requirements
@@ -201,7 +237,7 @@ MIT License - see [LICENSE](LICENSE) for details
 ---
 
 <p align="center">
-  <strong>dcli makes container and repository management effortless</strong><br>
+  <strong>dcli makes container, repository, and custom command management effortless</strong><br>
   <a href="https://github.com/oleg-koval/dcli/issues">Report Issues</a> • 
   <a href="https://github.com/oleg-koval/dcli/discussions">Discussions</a> •
   <a href="https://github.com/oleg-koval/dcli/releases">Releases</a>
