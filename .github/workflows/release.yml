@@ -1,9 +1,12 @@
 name: Release
 
+# Publish only when a semver tag is pushed (e.g. v0.2.0). Do not derive the
+# release version from `git describe`: that produced pseudo-tags like
+# v0.1.0-27-gabc1234, which were then tagged again and chained into unusable names.
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
@@ -41,17 +44,10 @@ jobs:
         with:
           go-version: '1.25'
 
-      - name: Generate version from git
-        id: version
-        run: |
-          VERSION="$(git describe --tags --always --dirty 2>/dev/null || echo "v0.1.0-$(git rev-parse --short HEAD)")"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
-          args: release --clean --skip-validate
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          GORELEASER_CURRENT_TAG: ${{ steps.version.outputs.version }}

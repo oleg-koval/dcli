@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -37,5 +38,14 @@ func TestExecuteInvokesStartupUpdater(t *testing.T) {
 	}
 	if len(fake.args) == 0 {
 		t.Fatal("expected args to be forwarded to the startup updater")
+	}
+}
+
+func TestRootHelpHighlightsExecutionFirstWorkflow(t *testing.T) {
+	if !strings.Contains(rootCmd.Long, "execution-first") {
+		t.Fatalf("expected root help to mention execution-first workflow, got %q", rootCmd.Long)
+	}
+	if !strings.Contains(rootCmd.Long, "dcli commands ui") {
+		t.Fatalf("expected root help to mention command management UI, got %q", rootCmd.Long)
 	}
 }

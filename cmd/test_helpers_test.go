@@ -35,3 +35,21 @@ func cleanupDirForTest(t *testing.T, path string) {
 		}
 	})
 }
+
+func setWorkingDirForTest(t *testing.T, path string) {
+	t.Helper()
+
+	original, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to read working directory: %v", err)
+	}
+	if err := os.Chdir(path); err != nil {
+		t.Fatalf("failed to change working directory: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if err := os.Chdir(original); err != nil {
+			t.Errorf("failed to restore working directory: %v", err)
+		}
+	})
+}
