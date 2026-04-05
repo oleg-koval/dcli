@@ -21,7 +21,7 @@ type fakeClient struct {
 	updateExecutable string
 }
 
-func (f *fakeClient) LatestRelease(_ context.Context, _ Repository) (*Release, error) {
+func (f *fakeClient) LatestRelease(_ context.Context, _ Repository, _ ReleaseChannel) (*Release, error) {
 	f.latestCalled = true
 	return f.latest, f.latestErr
 }
@@ -60,7 +60,8 @@ func TestNormalizeVersion(t *testing.T) {
 		"plain":      {in: "1.2.3", want: "v1.2.3"},
 		"prefixed":   {in: "v1.2.3", want: "v1.2.3"},
 		"whitespace": {in: " 1.2.3 ", want: "v1.2.3"},
-		"invalid":    {in: "latest", want: ""},
+		"invalid":        {in: "latest", want: ""},
+		"semver_prerelease": {in: "1.0.0-beta.1", want: "v1.0.0-beta.1"},
 	}
 
 	for name, tc := range tests {
@@ -98,6 +99,33 @@ func TestNewRunnerTimeoutFromEnvInvalidFallsBack(t *testing.T) {
 	runner := NewRunner(Repository{Owner: "oleg-koval", Name: "dcli"})
 	if runner.Timeout != defaultTimeout {
 		t.Fatalf("expected default timeout %s, got %s", defaultTimeout, runner.Timeout)
+	}
+}
+
+func TestNewRunnerReleaseChannelFromEnv(t *testing.T) {
+	t.Setenv(ChannelEnvVar, "")
+
+	runner := NewRunner(Repository{Owner: "oleg-koval", Name: "dcli"})
+	if runner.ReleaseChannel != ChannelStable {
+		t.Fatalf("expected stable channel, got %q", runner.ReleaseChannel)
+	}
+
+	t.Setenv(ChannelEnvVar, "prerelease")
+	runner = NewRunner(Repository{Owner: "oleg-koval", Name: "dcli"})
+	if runner.ReleaseChannel != ChannelPrerelease {
+		t.Fatalf("expected prerelease channel, got %q", runner.ReleaseChannel)
+	}
+
+	t.Setenv(ChannelEnvVar, "BETA")
+	runner = NewRunner(Repository{Owner: "oleg-koval", Name: "dcli"})
+	if runner.ReleaseChannel != ChannelBeta {
+		t.Fatalf("expected beta channel, got %q", runner.ReleaseChannel)
+	}
+
+	t.Setenv(ChannelEnvVar, "bogus")
+	runner = NewRunner(Repository{Owner: "oleg-koval", Name: "dcli"})
+	if runner.ReleaseChannel != ChannelStable {
+		t.Fatalf("unknown channel should default to stable, got %q", runner.ReleaseChannel)
 	}
 }
 
@@ -144,6 +172,105 @@ func TestSelectReleaseAssetMissing(t *testing.T) {
 	}
 }
 
+func TestSelectReleaseAssetPrereleaseTag(t *testing.T) {
+	t.Parallel()
+
+	project := "dcli"
+	version := "v2.0.0-beta.1"
+	assetName := assetCandidates(project, version, runtime.GOOS, runtime.GOARCH)[0]
+	release := &githubRelease{
+		TagName:    version,
+		Prerelease: true,
+		Assets: []githubAsset{
+			{Name: assetName, BrowserDownloadURL: "https://example.com/dl"},
+		},
+	}
+
+	asset, err := selectReleaseAsset(release, project, runtime.GOOS, runtime.GOARCH)
+	if err != nil {
+		t.Fatalf("selectReleaseAsset: %v", err)
+	}
+	if asset.Name != assetName {
+		t.Fatalf("asset name: got %q want %q", asset.Name, assetName)
+	}
+}
+
+func TestGitHubClientPrereleaseChannelPicksSemverMax(t *testing.T) {
+	t.Parallel()
+
+	newer := assetCandidates("dcli", "v2.0.0-beta.2", runtime.GOOS, runtime.GOARCH)[0]
+	older := assetCandidates("dcli", "v2.0.0-beta.1", runtime.GOOS, runtime.GOARCH)[0]
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/repos/oleg-koval/dcli/releases" {
+			t.Fatalf("unexpected path %q", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[
+			{
+				"tag_name": "v2.0.0-beta.1",
+				"draft": false,
+				"prerelease": true,
+				"assets": [{"name": "` + older + `", "browser_download_url": "https://example.com/a"}]
+			},
+			{
+				"tag_name": "v2.0.0-beta.2",
+				"draft": false,
+				"prerelease": true,
+				"assets": [{"name": "` + newer + `", "browser_download_url": "https://example.com/b"}]
+			}
+		]`))
+	}))
+	defer server.Close()
+
+	client := &GitHubClient{BaseURL: server.URL, HTTPClient: server.Client()}
+	release, err := client.LatestRelease(context.Background(), Repository{Owner: "oleg-koval", Name: "dcli"}, ChannelPrerelease)
+	if err != nil {
+		t.Fatalf("LatestRelease: %v", err)
+	}
+	if release.Version != "v2.0.0-beta.2" {
+		t.Fatalf("version: got %q want v2.0.0-beta.2", release.Version)
+	}
+	if release.AssetName != newer {
+		t.Fatalf("asset: got %q want %q", release.AssetName, newer)
+	}
+}
+
+func TestGitHubClientBetaChannelFiltersTag(t *testing.T) {
+	t.Parallel()
+
+	betaAsset := assetCandidates("dcli", "v2.0.0-beta.1", runtime.GOOS, runtime.GOARCH)[0]
+	alphaAsset := assetCandidates("dcli", "v3.0.0-alpha.1", runtime.GOOS, runtime.GOARCH)[0]
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[
+			{
+				"tag_name": "v3.0.0-alpha.1",
+				"draft": false,
+				"prerelease": true,
+				"assets": [{"name": "` + alphaAsset + `", "browser_download_url": "https://example.com/a"}]
+			},
+			{
+				"tag_name": "v2.0.0-beta.1",
+				"draft": false,
+				"prerelease": true,
+				"assets": [{"name": "` + betaAsset + `", "browser_download_url": "https://example.com/b"}]
+			}
+		]`))
+	}))
+	defer server.Close()
+
+	client := &GitHubClient{BaseURL: server.URL, HTTPClient: server.Client()}
+	release, err := client.LatestRelease(context.Background(), Repository{Owner: "oleg-koval", Name: "dcli"}, ChannelBeta)
+	if err != nil {
+		t.Fatalf("LatestRelease: %v", err)
+	}
+	if release.Version != "v2.0.0-beta.1" {
+		t.Fatalf("version: got %q want v2.0.0-beta.1", release.Version)
+	}
+}
+
 func TestGitHubClientLatestRelease(t *testing.T) {
 	t.Parallel()
 
@@ -166,7 +293,7 @@ func TestGitHubClientLatestRelease(t *testing.T) {
 	defer server.Close()
 
 	client := &GitHubClient{BaseURL: server.URL, HTTPClient: server.Client()}
-	release, err := client.LatestRelease(context.Background(), Repository{Owner: "oleg-koval", Name: "dcli"})
+	release, err := client.LatestRelease(context.Background(), Repository{Owner: "oleg-koval", Name: "dcli"}, ChannelStable)
 	if err != nil {
 		t.Fatalf("LatestRelease returned error: %v", err)
 	}
@@ -187,7 +314,7 @@ func TestGitHubClientLatestReleaseNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := &GitHubClient{BaseURL: server.URL, HTTPClient: server.Client()}
-	if _, err := client.LatestRelease(context.Background(), Repository{Owner: "oleg-koval", Name: "dcli"}); !errors.Is(err, ErrReleaseNotFound) {
+	if _, err := client.LatestRelease(context.Background(), Repository{Owner: "oleg-koval", Name: "dcli"}, ChannelStable); !errors.Is(err, ErrReleaseNotFound) {
 		t.Fatalf("expected ErrReleaseNotFound, got %v", err)
 	}
 }
