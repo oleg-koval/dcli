@@ -21,7 +21,27 @@ const DisableEnvVar = "DCLI_DISABLE_AUTO_UPDATE"
 
 const TimeoutEnvVar = "DCLI_AUTO_UPDATE_TIMEOUT"
 
+// ChannelEnvVar selects which GitHub Releases channel the startup updater considers.
+// stable (default): GitHub "latest" non-prerelease only.
+// prerelease: newest semver among GitHub prereleases with a matching asset.
+// beta / alpha: like prerelease but tag must contain "-beta" or "-alpha" (case-insensitive).
+const ChannelEnvVar = "DCLI_AUTO_UPDATE_CHANNEL"
+
 const defaultTimeout = 1 * time.Second
+
+const releasesListPerPage = 30
+
+const releasesListMaxPages = 5
+
+// ReleaseChannel controls which GitHub releases auto-update may install.
+type ReleaseChannel string
+
+const (
+	ChannelStable     ReleaseChannel = "stable"
+	ChannelPrerelease ReleaseChannel = "prerelease"
+	ChannelBeta       ReleaseChannel = "beta"
+	ChannelAlpha      ReleaseChannel = "alpha"
+)
 
 const githubAPIBaseURL = "https://api.github.com"
 
@@ -39,29 +59,47 @@ type Release struct {
 }
 
 type Client interface {
-	LatestRelease(ctx context.Context, repository Repository) (*Release, error)
+	LatestRelease(ctx context.Context, repository Repository, channel ReleaseChannel) (*Release, error)
 	UpdateTo(ctx context.Context, release *Release, executable string) error
 }
 
 type Runner struct {
-	Client        Client
-	Repository    Repository
-	DisableEnvVar string
-	Timeout       time.Duration
-	Executable    func() (string, error)
-	Environment   func() []string
-	Restart       func(exe string, args []string, env []string) error
+	Client         Client
+	Repository     Repository
+	ReleaseChannel ReleaseChannel
+	DisableEnvVar  string
+	Timeout        time.Duration
+	Executable     func() (string, error)
+	Environment    func() []string
+	Restart        func(exe string, args []string, env []string) error
 }
 
 func NewRunner(repository Repository) *Runner {
 	return &Runner{
-		Client:        NewGitHubClient(),
-		Repository:    repository,
-		DisableEnvVar: DisableEnvVar,
-		Timeout:       defaultRunnerTimeout(),
-		Executable:    os.Executable,
-		Environment:   os.Environ,
-		Restart:       restartBinary,
+		Client:         NewGitHubClient(),
+		Repository:     repository,
+		ReleaseChannel: releaseChannelFromEnv(),
+		DisableEnvVar:  DisableEnvVar,
+		Timeout:        defaultRunnerTimeout(),
+		Executable:     os.Executable,
+		Environment:    os.Environ,
+		Restart:        restartBinary,
+	}
+}
+
+func releaseChannelFromEnv() ReleaseChannel {
+	raw := strings.TrimSpace(strings.ToLower(os.Getenv(ChannelEnvVar)))
+	switch raw {
+	case "", string(ChannelStable):
+		return ChannelStable
+	case string(ChannelPrerelease), "pre":
+		return ChannelPrerelease
+	case string(ChannelBeta):
+		return ChannelBeta
+	case string(ChannelAlpha):
+		return ChannelAlpha
+	default:
+		return ChannelStable
 	}
 }
 
@@ -101,7 +139,12 @@ func (r *Runner) Run(ctx context.Context, currentVersion string, args []string) 
 		defer cancel()
 	}
 
-	release, err := r.Client.LatestRelease(ctx, r.Repository)
+	ch := r.ReleaseChannel
+	if ch == "" {
+		ch = ChannelStable
+	}
+
+	release, err := r.Client.LatestRelease(ctx, r.Repository, ch)
 	if err != nil || release == nil {
 		return
 	}
@@ -159,12 +202,25 @@ func NewGitHubClient() *GitHubClient {
 	}
 }
 
-func (c *GitHubClient) LatestRelease(ctx context.Context, repository Repository) (*Release, error) {
+func (c *GitHubClient) LatestRelease(ctx context.Context, repository Repository, channel ReleaseChannel) (*Release, error) {
 	if repository.Owner == "" || repository.Name == "" {
 		return nil, fmt.Errorf("repository owner and name are required")
 	}
 
-	release, err := c.fetchLatestRelease(ctx, repository)
+	if channel == "" {
+		channel = ChannelStable
+	}
+
+	var release *githubRelease
+	var err error
+	switch channel {
+	case ChannelStable:
+		release, err = c.fetchLatestStableRelease(ctx, repository)
+	case ChannelPrerelease, ChannelBeta, ChannelAlpha:
+		release, err = c.pickBestListedRelease(ctx, repository, channel)
+	default:
+		release, err = c.pickBestListedRelease(ctx, repository, channel)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -188,13 +244,17 @@ func (c *GitHubClient) UpdateTo(ctx context.Context, release *Release, executabl
 	return selfupdate.UpdateTo(ctx, release.AssetURL, release.AssetName, executable)
 }
 
-func (c *GitHubClient) fetchLatestRelease(ctx context.Context, repository Repository) (*githubRelease, error) {
+func (c *GitHubClient) fetchLatestStableRelease(ctx context.Context, repository Repository) (*githubRelease, error) {
 	baseURL := strings.TrimRight(c.BaseURL, "/")
 	if baseURL == "" {
 		baseURL = githubAPIBaseURL
 	}
 
 	endpoint := fmt.Sprintf("%s/repos/%s/%s/releases/latest", baseURL, url.PathEscape(repository.Owner), url.PathEscape(repository.Name))
+	return c.decodeSingleRelease(ctx, endpoint)
+}
+
+func (c *GitHubClient) decodeSingleRelease(ctx context.Context, endpoint string) (*githubRelease, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
@@ -235,6 +295,116 @@ func (c *GitHubClient) fetchLatestRelease(ctx context.Context, repository Reposi
 	return &release, nil
 }
 
+func (c *GitHubClient) fetchReleasesPage(ctx context.Context, repository Repository, page, perPage int) ([]githubRelease, error) {
+	baseURL := strings.TrimRight(c.BaseURL, "/")
+	if baseURL == "" {
+		baseURL = githubAPIBaseURL
+	}
+
+	endpoint := fmt.Sprintf(
+		"%s/repos/%s/%s/releases?per_page=%d&page=%d",
+		baseURL,
+		url.PathEscape(repository.Owner),
+		url.PathEscape(repository.Name),
+		perPage,
+		page,
+	)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "dcli-auto-update")
+
+	client := c.HTTPClient
+	if client == nil {
+		client = http.DefaultClient
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("github releases list failed: %s", resp.Status)
+	}
+
+	var releases []githubRelease
+	if err := json.NewDecoder(resp.Body).Decode(&releases); err != nil {
+		return nil, err
+	}
+
+	return releases, nil
+}
+
+func releaseMatchesChannel(rel *githubRelease, channel ReleaseChannel) bool {
+	if rel == nil || rel.Draft {
+		return false
+	}
+
+	switch channel {
+	case ChannelStable:
+		return !rel.Prerelease
+	case ChannelPrerelease:
+		return rel.Prerelease
+	case ChannelBeta:
+		if !rel.Prerelease {
+			return false
+		}
+		return strings.Contains(strings.ToLower(rel.TagName), "-beta")
+	case ChannelAlpha:
+		if !rel.Prerelease {
+			return false
+		}
+		return strings.Contains(strings.ToLower(rel.TagName), "-alpha")
+	default:
+		return !rel.Prerelease
+	}
+}
+
+func (c *GitHubClient) pickBestListedRelease(ctx context.Context, repository Repository, channel ReleaseChannel) (*githubRelease, error) {
+	var best *githubRelease
+	var bestCanon string
+
+	for page := 1; page <= releasesListMaxPages; page++ {
+		releases, err := c.fetchReleasesPage(ctx, repository, page, releasesListPerPage)
+		if err != nil {
+			return nil, err
+		}
+		if len(releases) == 0 {
+			break
+		}
+
+		for i := range releases {
+			rel := &releases[i]
+			if !releaseMatchesChannel(rel, channel) {
+				continue
+			}
+			ver := normalizeVersion(rel.TagName)
+			if ver == "" {
+				continue
+			}
+			if _, err := selectReleaseAsset(rel, repository.Name, runtime.GOOS, runtime.GOARCH); err != nil {
+				continue
+			}
+			if best == nil || semver.Compare(ver, bestCanon) > 0 {
+				best = rel
+				bestCanon = ver
+			}
+		}
+	}
+
+	if best == nil {
+		return nil, ErrReleaseNotFound
+	}
+
+	return best, nil
+}
+
 type githubRelease struct {
 	TagName    string        `json:"tag_name"`
 	Draft      bool          `json:"draft"`
@@ -251,7 +421,7 @@ func selectReleaseAsset(release *githubRelease, project, goos, goarch string) (*
 	if release == nil {
 		return nil, errors.New("release is required")
 	}
-	if release.Draft || release.Prerelease {
+	if release.Draft {
 		return nil, ErrReleaseNotFound
 	}
 

@@ -1,5 +1,6 @@
 name: Tests
 
+# Run on every push and pull request to main and develop.
 on:
   push:
     branches: [main, develop]
@@ -11,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.25', 'stable']
+        go-version: ['1.26', 'stable']
     steps:
       - uses: actions/checkout@v4
 
@@ -28,13 +29,14 @@ jobs:
       - name: Run linter (SAST)
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.11.3
+          version: v2.11.4
           args: --timeout=5m
 
       - name: Upload coverage to Coveralls
-        if: matrix.go-version == '1.25'
+        if: matrix.go-version == '1.26'
         uses: coverallsapp/github-action@v2
         with:
           files: coverage.out
+          format: golang
           fail-on-error: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
