@@ -1,0 +1,87 @@
+name: Release (prerelease)
+
+# Publishes beta builds from the `beta` branch. Tags follow semver prerelease
+# format: v{next_minor}.0-beta.{run_number} (e.g. v0.2.0-beta.42).
+# GoReleaser `prerelease: auto` marks the GitHub release as a prerelease.
+# Homebrew is skipped; install from GitHub release assets or build from source.
+on:
+  push:
+    branches:
+      - beta
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  test-gate:
+    name: Verify Tests and Linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+
+      - name: Run tests
+        run: go test -v -covermode=atomic ./...
+
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.11.4
+          args: --timeout=5m
+
+  release:
+    needs: test-gate
+    name: Create prerelease with GoReleaser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+
+      - name: Determine prerelease version
+        id: version
+        run: |
+          LATEST="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)"
+          if [ -z "$LATEST" ]; then
+            LATEST="v0.0.0"
+          fi
+          echo "Latest stable tag: ${LATEST}"
+
+          MAJOR="$(echo "$LATEST" | sed 's/^v//' | cut -d. -f1)"
+          MINOR="$(echo "$LATEST" | sed 's/^v//' | cut -d. -f2)"
+
+          # Beta always targets the next minor version
+          NEXT_MINOR=$((MINOR + 1))
+          VERSION="v${MAJOR}.${NEXT_MINOR}.0-beta.${GITHUB_RUN_NUMBER}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Releasing prerelease ${VERSION}"
+
+      - name: Create and push tag
+        run: |
+          TAG="${{ steps.version.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag ${TAG} already exists."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Prerelease $TAG"
+          git push origin "$TAG"
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean --skip=homebrew
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

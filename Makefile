@@ -1,6 +1,6 @@
 .PHONY: help build build-all clean test lint install
 
-VERSION ?= 0.1.0
+VERSION ?= $(shell git describe --tags --match 'v[0-9]*' --abbrev=0 2>/dev/null || echo dev)
 BINARY_NAME = dcli
 PLATFORMS = darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64
 
