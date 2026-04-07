@@ -163,6 +163,10 @@ func (r *Runner) Run(ctx context.Context, currentVersion string, args []string) 
 		return
 	}
 
+	if isBrewManaged(executable) {
+		return
+	}
+
 	if err := r.Client.UpdateTo(ctx, release, executable); err != nil {
 		return
 	}
@@ -461,6 +465,17 @@ func assetCandidates(project, version, goos, goarch string) []string {
 	}
 
 	return candidates
+}
+
+// isBrewManaged reports whether the executable lives inside a Homebrew-managed
+// path (e.g. /opt/homebrew/Cellar/... or /usr/local/Cellar/...).
+// When true, the built-in self-updater is skipped so that Homebrew remains the
+// single source of truth for the installed binary. Use "brew upgrade dcli" to
+// update in that case.
+func isBrewManaged(executable string) bool {
+	return strings.Contains(executable, "/Cellar/") ||
+		strings.Contains(executable, "/homebrew/") ||
+		strings.Contains(executable, "/linuxbrew/")
 }
 
 func normalizeVersion(version string) string {
