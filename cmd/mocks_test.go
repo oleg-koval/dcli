@@ -2,12 +2,13 @@ package cmd
 
 // MockDockerHelper implements DockerHelper for testing
 type MockDockerHelper struct {
-	GetServicesFn   func(projectDir string) ([]string, error)
+	GetServicesFn   func(projectDir string, profiles ...string) ([]string, error)
 	RunCommandFn    func(projectDir string, args ...string) error
 	GetContainersFn func() ([]string, error)
 	Calls           struct {
 		GetServices []struct {
 			ProjectDir string
+			Profiles   []string
 		}
 		RunCommand []struct {
 			ProjectDir string
@@ -17,12 +18,13 @@ type MockDockerHelper struct {
 	}
 }
 
-func (m *MockDockerHelper) GetServices(projectDir string) ([]string, error) {
+func (m *MockDockerHelper) GetServices(projectDir string, profiles ...string) ([]string, error) {
 	m.Calls.GetServices = append(m.Calls.GetServices, struct {
 		ProjectDir string
-	}{projectDir})
+		Profiles   []string
+	}{projectDir, profiles})
 	if m.GetServicesFn != nil {
-		return m.GetServicesFn(projectDir)
+		return m.GetServicesFn(projectDir, profiles...)
 	}
 	return []string{}, nil
 }

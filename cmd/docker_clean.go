@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
+	"github.com/oleg-koval/dcli/internal/docker"
 	"github.com/spf13/cobra"
 )
 
@@ -15,10 +15,9 @@ then rebuilds and restarts them.
 
 If no services are specified, all services are cleaned.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Get project directory
-		projectDir := os.Getenv("DCLI_PROJECT_DIR")
-		if projectDir == "" {
-			projectDir = "."
+		projectDir, err := resolveProjectDir()
+		if err != nil {
+			return err
 		}
 
 		// Get services to clean
@@ -26,8 +25,7 @@ If no services are specified, all services are cleaned.`,
 		if len(args) > 0 {
 			services = args
 		} else {
-			// Get all available services
-			availableServices, err := dockerHelper.GetServices(projectDir)
+			availableServices, err := dockerHelper.GetServices(projectDir, dockerProfiles...)
 			if err != nil {
 				return fmt.Errorf("failed to get services: %w", err)
 			}
@@ -45,9 +43,10 @@ If no services are specified, all services are cleaned.`,
 		}
 		fmt.Println()
 
+		rmArgs, buildArgs, upArgs := docker.BuildCleanCommandArgs(services, dockerProfiles...)
+
 		// Remove containers and volumes
 		fmt.Println("🧹  Removing containers and volumes...")
-		rmArgs := append([]string{"compose", "rm", "-sfv"}, services...)
 		if err := dockerHelper.RunCommand(projectDir, rmArgs...); err != nil {
 			return fmt.Errorf("failed to remove containers: %w", err)
 		}
@@ -56,7 +55,6 @@ If no services are specified, all services are cleaned.`,
 
 		// Rebuild images
 		fmt.Println("🔨  Building images...")
-		buildArgs := append([]string{"compose", "build"}, services...)
 		if err := dockerHelper.RunCommand(projectDir, buildArgs...); err != nil {
 			return fmt.Errorf("failed to build images: %w", err)
 		}
@@ -65,7 +63,6 @@ If no services are specified, all services are cleaned.`,
 
 		// Start services
 		fmt.Println("🚀  Starting services...")
-		upArgs := append([]string{"compose", "up", "-d"}, services...)
 		if err := dockerHelper.RunCommand(projectDir, upArgs...); err != nil {
 			return fmt.Errorf("failed to start services: %w", err)
 		}

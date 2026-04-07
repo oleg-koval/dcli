@@ -8,7 +8,7 @@ import (
 
 func TestDockerRestartWithValidServices(t *testing.T) {
 	mockHelper := &MockDockerHelper{
-		GetServicesFn: func(projectDir string) ([]string, error) {
+		GetServicesFn: func(projectDir string, profiles ...string) ([]string, error) {
 			return []string{"web", "db"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
@@ -41,7 +41,7 @@ func TestDockerRestartWithValidServices(t *testing.T) {
 
 func TestDockerRestartWithNoServices(t *testing.T) {
 	mockHelper := &MockDockerHelper{
-		GetServicesFn: func(projectDir string) ([]string, error) {
+		GetServicesFn: func(projectDir string, profiles ...string) ([]string, error) {
 			return []string{"web", "db", "cache"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
@@ -75,7 +75,7 @@ func TestDockerRestartWithNoServices(t *testing.T) {
 func TestDockerRestartRunCommandCalled(t *testing.T) {
 	runCommandCalled := false
 	mockHelper := &MockDockerHelper{
-		GetServicesFn: func(projectDir string) ([]string, error) {
+		GetServicesFn: func(projectDir string, profiles ...string) ([]string, error) {
 			return []string{"web"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
@@ -108,7 +108,7 @@ func TestDockerRestartRunCommandCalled(t *testing.T) {
 
 func TestDockerRestartPreservesVolumes(t *testing.T) {
 	mockHelper := &MockDockerHelper{
-		GetServicesFn: func(projectDir string) ([]string, error) {
+		GetServicesFn: func(projectDir string, profiles ...string) ([]string, error) {
 			return []string{"db"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
@@ -186,7 +186,7 @@ func TestDockerRestartProjectDirFromEnv(t *testing.T) {
 	setEnvForTest(t, "DCLI_PROJECT_DIR", "/test/path")
 
 	mockHelper := &MockDockerHelper{
-		GetServicesFn: func(projectDir string) ([]string, error) {
+		GetServicesFn: func(projectDir string, profiles ...string) ([]string, error) {
 			if projectDir != "/test/path" {
 				t.Errorf("expected projectDir '/test/path', got %s", projectDir)
 			}
@@ -216,7 +216,7 @@ func TestDockerRestartProjectDirFromEnv(t *testing.T) {
 
 func TestDockerRestartHelp(t *testing.T) {
 	mockHelper := &MockDockerHelper{
-		GetServicesFn: func(projectDir string) ([]string, error) {
+		GetServicesFn: func(projectDir string, profiles ...string) ([]string, error) {
 			return []string{"web"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
@@ -240,7 +240,7 @@ func TestDockerRestartHelp(t *testing.T) {
 
 func TestDockerRestartMultipleServices(t *testing.T) {
 	mockHelper := &MockDockerHelper{
-		GetServicesFn: func(projectDir string) ([]string, error) {
+		GetServicesFn: func(projectDir string, profiles ...string) ([]string, error) {
 			return []string{"web", "db", "cache"}, nil
 		},
 		RunCommandFn: func(projectDir string, args ...string) error {
@@ -291,5 +291,65 @@ func TestDockerRestartMultipleServices(t *testing.T) {
 		if !found {
 			t.Errorf("expected service %q to be passed to RunCommand", service)
 		}
+	}
+}
+
+func TestDockerRestartWithProfile(t *testing.T) {
+	// Set profiles directly (mirrors what --profile flag does)
+	dockerProfiles = []string{"all_services"}
+	t.Cleanup(func() { dockerProfiles = nil })
+
+	mockHelper := &MockDockerHelper{
+		GetServicesFn: func(projectDir string, profiles ...string) ([]string, error) {
+			if len(profiles) != 1 || profiles[0] != "all_services" {
+				t.Errorf("expected profiles [all_services], got %v", profiles)
+			}
+			return []string{"web", "api", "db"}, nil
+		},
+		RunCommandFn: func(projectDir string, args ...string) error {
+			// Verify --profile appears in compose args
+			found := false
+			for i, arg := range args {
+				if arg == "--profile" && i+1 < len(args) && args[i+1] == "all_services" {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("expected --profile all_services in args, got %v", args)
+			}
+			return nil
+		},
+	}
+	setDockerHelper(mockHelper)
+	defer resetDockerHelper()
+
+	// Use a fresh command to avoid stale Cobra state from other tests
+	localRestartCmd := &cobra.Command{
+		Use:  dockerRestartCmd.Use,
+		RunE: dockerRestartCmd.RunE,
+	}
+	rootCmd := &cobra.Command{}
+	dockerCmd := &cobra.Command{Use: "docker"}
+	rootCmd.AddCommand(dockerCmd)
+	dockerCmd.AddCommand(localRestartCmd)
+
+	rootCmd.SetArgs([]string{"docker", "restart"})
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// GetServices should have been called with the profile
+	if len(mockHelper.Calls.GetServices) == 0 {
+		t.Fatal("expected GetServices to be called")
+	}
+	if len(mockHelper.Calls.GetServices[0].Profiles) != 1 || mockHelper.Calls.GetServices[0].Profiles[0] != "all_services" {
+		t.Errorf("expected GetServices called with profiles [all_services], got %v", mockHelper.Calls.GetServices[0].Profiles)
+	}
+
+	// Both RunCommand calls (stop, up) should contain --profile
+	if len(mockHelper.Calls.RunCommand) != 2 {
+		t.Fatalf("expected 2 RunCommand calls, got %d", len(mockHelper.Calls.RunCommand))
 	}
 }
