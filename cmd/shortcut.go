@@ -262,7 +262,7 @@ func listAliases(configFile string) ([]string, error) {
 		}
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var shortcuts []string
 	scanner := bufio.NewScanner(f)
