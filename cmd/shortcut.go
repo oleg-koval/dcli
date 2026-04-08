@@ -154,7 +154,7 @@ func detectShellConfig() (string, string, error) {
 		return filepath.Join(home, ".bashrc"), "bash", nil
 	case "fish":
 		fishDir := filepath.Join(home, ".config", "fish")
-		if err := os.MkdirAll(fishDir, 0755); err != nil {
+		if err := os.MkdirAll(fishDir, 0750); err != nil {
 			return "", "", fmt.Errorf("create fish config directory: %w", err)
 		}
 		return filepath.Join(fishDir, "config.fish"), "fish", nil
@@ -191,7 +191,7 @@ func shortcutMarker(name string) string {
 // hasAlias reports whether the specified configFile contains a line with the given marker.
 // It returns true if any line contains marker, and false if the file cannot be opened or no matching line is found.
 func hasAlias(configFile, marker string) bool {
-	f, err := os.Open(configFile)
+	f, err := os.Open(configFile) // #nosec G304
 	if err != nil {
 		return false
 	}
@@ -213,7 +213,7 @@ func hasAlias(configFile, marker string) bool {
 // and managed later. It returns any error encountered while opening or writing
 // the file.
 func appendAlias(configFile, name, marker string) (err error) {
-	f, err := os.OpenFile(configFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(configFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600) // #nosec G304
 	if err != nil {
 		return err
 	}
@@ -234,7 +234,7 @@ func appendAlias(configFile, name, marker string) (err error) {
 // It returns true if the file was modified, false if the file did not exist
 // or no matching lines were found. Any read or write error is returned.
 func removeAlias(configFile, marker string) (bool, error) {
-	data, err := os.ReadFile(configFile)
+	data, err := os.ReadFile(configFile) // #nosec G304
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return false, nil
@@ -285,7 +285,7 @@ func collapseBlankLines(lines []string) []string {
 // If the file does not exist, it returns (nil, nil). If a scan or read error occurs,
 // that error is returned.
 func listAliases(configFile string) ([]string, error) {
-	f, err := os.Open(configFile)
+	f, err := os.Open(configFile) // #nosec G304
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, nil
