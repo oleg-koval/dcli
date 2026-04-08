@@ -37,7 +37,7 @@ services:
 		t.Fatalf("failed to write docker-compose.yml: %v", err)
 	}
 
-	// Test GetServices
+	// Test GetServices (no profiles)
 	services, err := GetServices(tmpDir)
 	if err != nil {
 		t.Fatalf("GetServices failed: %v", err)
@@ -231,6 +231,87 @@ services:
 	for _, expected := range expectedServices {
 		if !serviceMap[expected] {
 			t.Errorf("expected service '%s' not found in: %v", expected, services)
+		}
+	}
+}
+
+func TestBuildCleanCommandArgsWithProfiles(t *testing.T) {
+	services := []string{"web", "db"}
+	rmArgs, buildArgs, upArgs := BuildCleanCommandArgs(services, "all_services")
+
+	// Verify profile flags appear in all arg slices
+	for _, tc := range []struct {
+		name string
+		args []string
+	}{
+		{"rm", rmArgs},
+		{"build", buildArgs},
+		{"up", upArgs},
+	} {
+		found := false
+		for i, arg := range tc.args {
+			if arg == "--profile" && i+1 < len(tc.args) && tc.args[i+1] == "all_services" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("%s args missing --profile all_services: %v", tc.name, tc.args)
+		}
+	}
+
+	// Verify services are included
+	if rmArgs[len(rmArgs)-2] != "web" || rmArgs[len(rmArgs)-1] != "db" {
+		t.Errorf("expected services at end of rmArgs, got %v", rmArgs)
+	}
+}
+
+func TestBuildCleanCommandArgsWithoutProfiles(t *testing.T) {
+	services := []string{"web"}
+	rmArgs, buildArgs, upArgs := BuildCleanCommandArgs(services)
+
+	// No --profile should appear
+	for _, tc := range []struct {
+		name string
+		args []string
+	}{
+		{"rm", rmArgs},
+		{"build", buildArgs},
+		{"up", upArgs},
+	} {
+		for _, arg := range tc.args {
+			if arg == "--profile" {
+				t.Errorf("%s args should not contain --profile: %v", tc.name, tc.args)
+			}
+		}
+	}
+
+	// Verify basic structure: compose <action> [services...]
+	if rmArgs[0] != "compose" || rmArgs[1] != "rm" {
+		t.Errorf("expected [compose rm ...], got %v", rmArgs)
+	}
+}
+
+func TestBuildRestartCommandArgsWithProfiles(t *testing.T) {
+	services := []string{"api", "worker"}
+	stopArgs, upArgs := BuildRestartCommandArgs(services, "backend", "monitoring")
+
+	// Verify both profiles appear in both arg slices
+	for _, tc := range []struct {
+		name string
+		args []string
+	}{
+		{"stop", stopArgs},
+		{"up", upArgs},
+	} {
+		profileCount := 0
+		for _, arg := range tc.args {
+			if arg == "--profile" {
+				profileCount++
+			}
+		}
+		if profileCount != 2 {
+			t.Errorf("%s args: expected 2 --profile flags, got %d in %v", tc.name, profileCount, tc.args)
 		}
 	}
 }
