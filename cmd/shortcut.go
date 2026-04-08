@@ -233,7 +233,7 @@ func removeAlias(configFile, marker string) (bool, error) {
 
 	// Collapse multiple consecutive blank lines left by removal
 	clean := collapseBlankLines(filtered)
-	return true, os.WriteFile(configFile, []byte(strings.Join(clean, "\n")), 0644)
+	return true, os.WriteFile(configFile, []byte(strings.Join(clean, "\n")), 0600)
 }
 
 func collapseBlankLines(lines []string) []string {
