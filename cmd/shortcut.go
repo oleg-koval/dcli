@@ -148,7 +148,11 @@ func detectShellConfig() (string, string, error) {
 		}
 		return filepath.Join(home, ".bashrc"), "bash", nil
 	case "fish":
-		return filepath.Join(home, ".config", "fish", "config.fish"), "fish", nil
+		fishDir := filepath.Join(home, ".config", "fish")
+		if err := os.MkdirAll(fishDir, 0755); err != nil {
+			return "", "", fmt.Errorf("create fish config directory: %w", err)
+		}
+		return filepath.Join(fishDir, "config.fish"), "fish", nil
 	default:
 		return filepath.Join(home, ".zshrc"), "zsh", nil
 	}
