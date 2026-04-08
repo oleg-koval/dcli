@@ -191,12 +191,16 @@ func hasAlias(configFile, marker string) bool {
 	return false
 }
 
-func appendAlias(configFile, name, marker string) error {
+func appendAlias(configFile, name, marker string) (err error) {
 	f, err := os.OpenFile(configFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		if cerr := f.Close(); err == nil && cerr != nil {
+			err = cerr
+		}
+	}()
 
 	line := fmt.Sprintf("\nalias %s='dcli' %s\n", name, marker)
 	_, err = fmt.Fprint(f, line)
