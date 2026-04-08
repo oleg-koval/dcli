@@ -40,6 +40,9 @@ var dockerCmd = &cobra.Command{
 	Short: "Docker Compose management commands",
 }
 
+// init registers the docker command with the root command, adds the persistent
+// --profile flag bound to dockerProfiles, and attaches the dockerClean and
+// dockerRestart subcommands.
 func init() {
 	rootCmd.AddCommand(dockerCmd)
 	dockerCmd.PersistentFlags().StringSliceVar(&dockerProfiles, "profile", nil, "Docker Compose profile(s) to activate (can be specified multiple times)")
@@ -47,7 +50,10 @@ func init() {
 	dockerCmd.AddCommand(dockerRestartCmd)
 }
 
-// resolveProjectDir returns DCLI_PROJECT_DIR if set, otherwise os.Getwd().
+// resolveProjectDir determines the project directory by returning the value of the
+// DCLI_PROJECT_DIR environment variable when it is set, or the current working
+// directory otherwise. If obtaining the working directory fails, it returns an
+// error wrapping the underlying failure.
 func resolveProjectDir() (string, error) {
 	if dir := os.Getenv("DCLI_PROJECT_DIR"); dir != "" {
 		return dir, nil

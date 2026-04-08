@@ -441,6 +441,13 @@ func selectReleaseAsset(release *githubRelease, project, goos, goarch string) (*
 	return nil, fmt.Errorf("release asset not found for %s/%s (%s/%s)", project, release.TagName, goos, goarch)
 }
 
+// assetCandidates returns possible release asset filenames for the given project, version,
+// operating system, and architecture.
+// It produces names with both hyphen and underscore delimiters and includes variants
+// using the original `version` and the version without a leading `v` (when present).
+// The file extension is `.zip` for Windows and `.tar.gz` for all other platforms.
+// Candidate order is: hyphen + original, underscore + original, then hyphen + trimmed,
+// underscore + trimmed (trimmed only included if the version started with `v`).
 func assetCandidates(project, version, goos, goarch string) []string {
 	ext := ".tar.gz"
 	if goos == "windows" {
@@ -471,7 +478,9 @@ func assetCandidates(project, version, goos, goarch string) []string {
 // path (e.g. /opt/homebrew/Cellar/... or /usr/local/Cellar/...).
 // When true, the built-in self-updater is skipped so that Homebrew remains the
 // single source of truth for the installed binary. Use "brew upgrade dcli" to
-// update in that case.
+// isBrewManaged reports whether the given executable path appears to be managed by Homebrew.
+// It resolves symbolic links, normalizes the path, and returns true if the resulting path
+// contains "/cellar/" or begins with "/opt/homebrew/" or "/home/linuxbrew/.linuxbrew/".
 func isBrewManaged(executable string) bool {
 	if executable == "" {
 		return false
@@ -487,6 +496,8 @@ func isBrewManaged(executable string) bool {
 		strings.HasPrefix(p, "/home/linuxbrew/.linuxbrew/")
 }
 
+// normalizeVersion ensures the provided version string is a valid semantic version and returns it in canonical `v`-prefixed form.
+// If the input is empty or cannot be parsed as a valid semver, it returns an empty string.
 func normalizeVersion(version string) string {
 	version = strings.TrimSpace(version)
 	if version == "" {

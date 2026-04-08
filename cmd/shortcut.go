@@ -122,6 +122,7 @@ var shortcutListCmd = &cobra.Command{
 	},
 }
 
+// init adds the `shortcut` command and its `install`, `uninstall`, and `list` subcommands to the root command.
 func init() {
 	rootCmd.AddCommand(shortcutCmd)
 	shortcutCmd.AddCommand(shortcutInstallCmd)
@@ -130,7 +131,11 @@ func init() {
 }
 
 // detectShellConfig returns the path to the user's shell config file and a
-// human-readable shell name. It reads $SHELL and falls back to zsh.
+// detectShellConfig returns the path to the user's shell configuration file and a human-readable shell name.
+// It inspects the SHELL environment variable to choose the config: for bash it prefers ~/.bash_profile if present
+// otherwise ~/.bashrc; for fish it ensures ~/.config/fish exists and returns ~/.config/fish/config.fish; for any
+// other shell it returns ~/.zshrc. It returns an error if the home directory cannot be resolved or if creating the
+// fish config directory fails.
 func detectShellConfig() (string, string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -158,6 +163,9 @@ func detectShellConfig() (string, string, error) {
 	}
 }
 
+// validateShortcutName reports an error if name is not a valid shortcut alias.
+// It enforces a non-empty name, allows only Unicode letters, digits, '_' and '-', and disallows the reserved name "dcli".
+// The returned error describes the first validation violation encountered.
 func validateShortcutName(name string) error {
 	if name == "" {
 		return errors.New("shortcut name cannot be empty")
@@ -175,10 +183,13 @@ func validateShortcutName(name string) error {
 
 const dcliShortcutTag = "# dcli-shortcut:"
 
+// shortcutMarker returns the marker string used to identify a dcli-managed alias for the given shortcut name.
 func shortcutMarker(name string) string {
 	return dcliShortcutTag + name
 }
 
+// hasAlias reports whether the specified configFile contains a line with the given marker.
+// It returns true if any line contains marker, and false if the file cannot be opened or no matching line is found.
 func hasAlias(configFile, marker string) bool {
 	f, err := os.Open(configFile)
 	if err != nil {
@@ -195,6 +206,12 @@ func hasAlias(configFile, marker string) bool {
 	return false
 }
 
+// appendAlias appends an alias entry for the given shortcut name to the specified
+// shell configuration file, creating the file if it does not exist.
+//
+// The appended line includes the provided marker so the alias can be identified
+// and managed later. It returns any error encountered while opening or writing
+// the file.
 func appendAlias(configFile, name, marker string) (err error) {
 	f, err := os.OpenFile(configFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -211,6 +228,11 @@ func appendAlias(configFile, name, marker string) (err error) {
 	return err
 }
 
+// removeAlias removes all lines containing marker from the file at configFile.
+// If one or more lines are removed the function rewrites the file with
+// consecutive blank lines collapsed.
+// It returns true if the file was modified, false if the file did not exist
+// or no matching lines were found. Any read or write error is returned.
 func removeAlias(configFile, marker string) (bool, error) {
 	data, err := os.ReadFile(configFile)
 	if err != nil {
@@ -240,6 +262,9 @@ func removeAlias(configFile, marker string) (bool, error) {
 	return true, os.WriteFile(configFile, []byte(strings.Join(clean, "\n")), 0600)
 }
 
+// collapseBlankLines collapses consecutive blank lines into a single blank line.
+// A line is considered blank when trimming whitespace yields an empty string.
+// Non-blank lines and single blank lines are preserved, and the relative order of lines is unchanged.
 func collapseBlankLines(lines []string) []string {
 	out := make([]string, 0, len(lines))
 	prev := false
@@ -254,6 +279,11 @@ func collapseBlankLines(lines []string) []string {
 	return out
 }
 
+// listAliases returns the dcli shortcut names found in the given shell config file.
+// It scans the file for lines containing the package marker prefix (dcliShortcutTag) and
+// collects the text preceding the marker (trimmed of surrounding space) for each match.
+// If the file does not exist, it returns (nil, nil). If a scan or read error occurs,
+// that error is returned.
 func listAliases(configFile string) ([]string, error) {
 	f, err := os.Open(configFile)
 	if err != nil {
