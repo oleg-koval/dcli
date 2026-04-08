@@ -473,9 +473,18 @@ func assetCandidates(project, version, goos, goarch string) []string {
 // single source of truth for the installed binary. Use "brew upgrade dcli" to
 // update in that case.
 func isBrewManaged(executable string) bool {
-	return strings.Contains(executable, "/Cellar/") ||
-		strings.Contains(executable, "/homebrew/") ||
-		strings.Contains(executable, "/linuxbrew/")
+	if executable == "" {
+		return false
+	}
+
+	if resolved, err := filepath.EvalSymlinks(executable); err == nil && resolved != "" {
+		executable = resolved
+	}
+
+	p := strings.ToLower(filepath.ToSlash(filepath.Clean(executable)))
+	return strings.Contains(p, "/cellar/") ||
+		strings.HasPrefix(p, "/opt/homebrew/") ||
+		strings.HasPrefix(p, "/home/linuxbrew/.linuxbrew/")
 }
 
 func normalizeVersion(version string) string {
