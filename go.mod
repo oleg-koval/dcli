@@ -7,7 +7,7 @@ require (
 	github.com/creativeprojects/go-selfupdate v1.5.2
 	github.com/golangci/golangci-lint/v2 v2.11.4
 	github.com/spf13/cobra v1.10.2
-	golang.org/x/mod v0.34.0
+	golang.org/x/mod v0.35.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
