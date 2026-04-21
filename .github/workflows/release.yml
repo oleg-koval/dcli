@@ -110,7 +110,7 @@ jobs:
 
       - name: Run GoReleaser
         if: steps.version.outputs.skip != 'true'
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: '~> v2'
