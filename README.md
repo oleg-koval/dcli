@@ -235,11 +235,14 @@ MIT License - see [LICENSE](LICENSE) for details
 
 [@oleg-koval](https://github.com/oleg-koval)
 
+Website: [dcli.olegkoval.com](https://dcli.olegkoval.com)
+
 ---
 
 <p align="center">
   <strong>dcli makes container, repository, and custom command management effortless</strong><br>
   <a href="https://github.com/oleg-koval/dcli/issues">Report Issues</a> •
   <a href="https://github.com/oleg-koval/dcli/discussions">Discussions</a> •
-  <a href="https://github.com/oleg-koval/dcli/releases">Releases</a>
+  <a href="https://github.com/oleg-koval/dcli/releases">Releases</a> •
+  <a href="https://buymeacoffee.com/olko">Buy Me a Coffee</a>
 </p>
