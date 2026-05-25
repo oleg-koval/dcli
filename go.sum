@@ -4,8 +4,8 @@
 4d63.com/gochecknoglobals v0.2.2/go.mod h1:lLxwTQjL5eIesRbvnzIP3jZtG140FnTdz+AlMa+ogt0=
 charm.land/lipgloss/v2 v2.0.3 h1:yM2zJ4Cf5Y51b7RHIwioil4ApI/aypFXXVHSwlM6RzU=
 charm.land/lipgloss/v2 v2.0.3/go.mod h1:7myLU9iG/3xluAWzpY/fSxYYHCgoKTie7laxk6ATwXA=
-code.gitea.io/sdk/gitea v0.25.0 h1:wSJlL0Qv+ODY2OdF0L7fwt86wgf1C/0g3xIXZ6eC5zI=
-code.gitea.io/sdk/gitea v0.25.0/go.mod h1:uDFWYBU8dgZsgOHwe6C/6olxvf8FHguNB3wW1i83fgg=
+code.gitea.io/sdk/gitea v0.25.1 h1:yywxWwoV+SdjHtbC6unBiXojWdZOtoHuGhEazEXeWuE=
+code.gitea.io/sdk/gitea v0.25.1/go.mod h1:uDFWYBU8dgZsgOHwe6C/6olxvf8FHguNB3wW1i83fgg=
 codeberg.org/chavacava/garif v0.2.0 h1:F0tVjhYbuOCnvNcU3YSpO6b3Waw6Bimy4K0mM8y6MfY=
 codeberg.org/chavacava/garif v0.2.0/go.mod h1:P2BPbVbT4QcvLZrORc2T29szK3xEOlnl0GiPTJmEqBQ=
 codeberg.org/polyfloyd/go-errorlint v1.9.0 h1:VkdEEmA1VBpH6ecQoMR4LdphVI3fA4RrCh2an7YmodI=
