@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	github.com/charmbracelet/bubbletea v1.3.10
-	github.com/creativeprojects/go-selfupdate v1.5.2
+	github.com/creativeprojects/go-selfupdate v1.6.0
 	github.com/golangci/golangci-lint/v2 v2.12.2
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/mod v0.38.0
@@ -109,7 +109,7 @@ require (
 	github.com/golangci/swaggoswag v0.0.0-20250504205917-77f2aca3143e // indirect
 	github.com/golangci/unconvert v0.0.0-20250410112200-a129a6e6413e // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/go-github/v74 v74.0.0 // indirect
+	github.com/google/go-github/v86 v86.0.0 // indirect
 	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/gordonklaus/ineffassign v0.2.0 // indirect
 	github.com/gostaticanalysis/analysisutil v0.7.1 // indirect

@@ -117,8 +117,8 @@ github.com/clipperhouse/displaywidth v0.11.0/go.mod h1:bkrFNkf81G8HyVqmKGxsPufD3
 github.com/clipperhouse/uax29/v2 v2.7.0 h1:+gs4oBZ2gPfVrKPthwbMzWZDaAFPGYK72F0NJv2v7Vk=
 github.com/clipperhouse/uax29/v2 v2.7.0/go.mod h1:EFJ2TJMRUaplDxHKj1qAEhCtQPW2tJSwu5BF98AuoVM=
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
-github.com/creativeprojects/go-selfupdate v1.5.2 h1:3KR3JLrq70oplb9yZzbmJ89qRP78D1AN/9u+l3k0LJ4=
-github.com/creativeprojects/go-selfupdate v1.5.2/go.mod h1:BCOuwIl1dRRCmPNRPH0amULeZqayhKyY2mH/h4va7Dk=
+github.com/creativeprojects/go-selfupdate v1.6.0 h1:Bu3cIgdyfI1Pg8XsL8nbaT2uMjfZ8HIoxnBmPJbN0sw=
+github.com/creativeprojects/go-selfupdate v1.6.0/go.mod h1:Ids8O474XGQG0jZ5vpBIhWffcGYjUP6ccOI0mMcvQbI=
 github.com/curioswitch/go-reassign v0.3.0 h1:dh3kpQHuADL3cobV/sSGETA8DOv457dwl+fbBAhrQPs=
 github.com/curioswitch/go-reassign v0.3.0/go.mod h1:nApPCCTtqLJN/s8HfItCcKV0jIPwluBOvZP+dsJGA88=
 github.com/daixiang0/gci v0.14.0 h1:h6AcLqmjIOBgojhtzY2CvBnA6RawPTkBHgtMvYD5YZ8=
@@ -225,8 +225,8 @@ github.com/google/go-cmp v0.5.8/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeN
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
 github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
-github.com/google/go-github/v74 v74.0.0 h1:yZcddTUn8DPbj11GxnMrNiAnXH14gNs559AsUpNpPgM=
-github.com/google/go-github/v74 v74.0.0/go.mod h1:ubn/YdyftV80VPSI26nSJvaEsTOnsjrxG3o9kJhcyak=
+github.com/google/go-github/v86 v86.0.0 h1:S/6aANJhwRm8EQmGKVML3j41yq0h2BsTP8FnDkO7kcA=
+github.com/google/go-github/v86 v86.0.0/go.mod h1:zKv1l4SwDXNFMGByi2FWkq71KwSXqj/eQRZuqtmcot8=
 github.com/google/go-querystring v1.2.0 h1:yhqkPbu2/OH+V9BfpCVPZkNmUXhb2gBxJArfhIxNtP0=
 github.com/google/go-querystring v1.2.0/go.mod h1:8IFJqpSRITyJ8QhQ13bmbeMBDfmeEJZD5A0egEOmkqU=
 github.com/google/pprof v0.0.0-20260507013755-92041b743c96 h1:YDDnaZ9afWajDboPMt9Vikqca/yWAX7KAxVzb4lJU1M=
